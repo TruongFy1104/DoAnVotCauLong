@@ -1,0 +1,214 @@
+/* Reset some basic styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+#login_page  {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #6e8efb, #a777e3);
+  overflow: hidden;
+}
+input[type="password"]::placeholder {
+  color: #888; /* Đổi màu placeholder thành xám đậm cho dễ đọc */
+}
+input[type="text"]::placeholder {
+  color: #888; /* Đổi màu placeholder thành xám đậm cho dễ đọc */
+}
+input[type="email"]::placeholder {
+  color: #888; /* Đổi màu placeholder thành xám đậm cho dễ đọc */
+}
+/* Đảm bảo placeholder luôn rõ ràng, dễ nhìn */
+#login_page .input-group input::placeholder,
+#login_page .input-group input::-webkit-input-placeholder,
+#login_page .input-group input:-ms-input-placeholder,
+#login_page .input-group input::-ms-input-placeholder {
+  color: #222 !important;   /* Màu placeholder đậm, dễ nhìn */
+  opacity: 1 !important;    /* Không bị mờ */
+  font-size: 1rem;
+  font-family: inherit;
+}
+#login_page .container {
+  position: relative;
+}
+.form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center; 
+}
+#login_page .login-container {
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 3rem;
+  width: 450px;
+  height: 450px;
+  border-radius: 20%;
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(-30px);
+  animation: fadeIn 1s ease forwards;
+}
+#login_page .register-container{
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 3rem;
+  width: 450px;
+  border-radius: 20%;
+  height: 450px;
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(-30px);
+  animation: fadeIn 1s ease forwards;
+}
+#login_page .login-container h2 {
+  margin-bottom: 1.5rem;
+  color: #fbf8f8;
+  font-size: 1.8rem;
+}
+#login_page .register-container h2{
+  margin-bottom: 1.5rem;
+  color: #fbf8f8;
+  font-size: 1.8rem;
+}
+#login_page .input-group {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+#login_page .input-group label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0.3rem;
+  color: #ccc;
+  pointer-events: none;
+  transition: 0.3s;
+}
+
+#login_page .input-group input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  outline: none;
+  transition: 0.3s;
+  font-size: 1rem;
+  color: #111; /* Đổi thành màu đen */
+  background: #fff; /* Nên để nền trắng cho dễ nhìn */
+}
+
+#login_page .input-group input:focus {
+  border-color: #6e8efb;
+}
+
+#login_page .input-group input:focus + label,
+#login_page .input-group input:not(:placeholder-shown) + label {
+  transform: translateY(-1rem);
+  font-size: 0.8rem;
+  color: #6e8efb;
+}
+
+#login_page .login-btn {
+  width: 85%;
+  padding: 0.8rem;
+  margin-top: 1.5rem;
+  background-color: #6e8efb;
+  border: none;
+  border-radius: 5px;
+  color: #fbf8f8;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 1rem;
+  top: 20px;
+}
+
+#login_page .login-btn:hover {
+  background-color: #576bd8;
+}
+
+/* Animation for form fade-in */
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Circle animations */
+#login_page .circle {
+  position: absolute;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+#login_page .circle1 {
+  width: 200px;
+  height: 200px;
+  top: 50%;
+  left: 50%;
+  transform-origin: -150px -150px;
+  animation: orbit 6s linear infinite;
+}
+
+#login_page .circle2 {
+  width: 250px;
+  height: 250px;
+  top: 50%;
+  left: 50%;
+  transform-origin: 200px 200px;
+  animation: orbit 8s linear infinite reverse;
+}
+
+#login_page .circle3 {
+  width: 300px;
+  height: 300px;
+  top: 50%;
+  left: 50%;
+  transform-origin: -250px -250px;
+  animation: orbit 10s linear infinite;
+}
+
+#login_page .circle4 {
+  width: 350px;
+  height: 350px;
+  top: 50%;
+  left: 50%;
+  transform-origin: 250px 250px;
+  animation: orbit 12s linear infinite reverse;
+}
+
+@keyframes orbit {
+  0% {
+    transform: rotate(0deg) translate(-50%, -50%);
+  }
+  100% {
+    transform: rotate(360deg) translate(-50%, -50%);
+  }
+}
+
+#login_page .register-link {
+  margin-top: 1rem;
+  color: #fff;
+}
+
+#login_page .register-link p {
+  font-size: 0.9rem;
+}
+
+#login_page .register-link a {
+  color: #6e8efb;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+#login_page .register-link a:hover {
+  color: #576bd8;
+}
