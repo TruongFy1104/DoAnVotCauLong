@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/db');
+const Category = require('./Category');
 
 const Brand = sequelize.define('Brand', {
     BrandId: {
@@ -11,9 +12,21 @@ const Brand = sequelize.define('Brand', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    CategoryId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: 'Category',
+            key: 'CategoryId'
+        }
+    }
 }, {
     tableName: 'Brand',
     timestamps: false,
 });
+
+// Thiết lập association giống ClothingSize
+Brand.belongsTo(Category, { foreignKey: 'CategoryId' });
+Category.hasMany(Brand, { foreignKey: 'CategoryId' });
 
 module.exports = Brand;

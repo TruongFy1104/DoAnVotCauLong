@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import Swal from 'sweetalert2';
+import { Link } from 'react-router-dom';
 const { checkAccount } = require('../Pages/Common');
 
 const UserProfile = ({ onPasswordChange }) => {
@@ -10,22 +12,15 @@ const UserProfile = ({ onPasswordChange }) => {
   const [accountInformation, setAccountInformation] = useState(null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [tab, setTab] = useState("info"); // Thêm state tab
-  // Nếu muốn có lịch sử đơn hàng thật, hãy fetch và lưu vào state orders
-  // const [orders, setOrders] = useState([]);
-  // const [selectedOrder, setSelectedOrder] = useState(null);
+  const [tab, setTab] = useState("info");
+  const [orders, setOrders] = useState([]);
+  const [bookings, setBookings] = useState([]);
 
-  // Nếu chỉ muốn demo, có thể để ordersSample là mảng rỗng
-  const ordersSample = [];
-
-  useEffect(() => {
-    fetchUserData();
-    // fetchOrder();
-  }, []);
   const fetchUserData = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
       alert('Bạn chưa đăng nhập!');
+      window.location.href = '/login';
       return;
     }
     try {
@@ -36,8 +31,24 @@ const UserProfile = ({ onPasswordChange }) => {
           'Authorization': `Bearer ${token}`,
         },
       });
+      if (response.status === 401 || response.status === 403) {
+        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        return;
+      }
       const data = await response.json();
-      setAccountInformation(data);
+      const user = data.user || data;
+      setAccountInformation({
+        username: user.username || user.Username || "",
+        email: user.email || user.Email || "",
+        mobile: user.mobile || user.Mobile || "",
+        lastname: user.lastname || user.Lastname || "",
+        firstname: user.firstname || user.Firstname || "",
+        address: user.address || user.Address || "",
+        gender: user.gender || user.Gender || "",
+        userId: user.userId || user.UserId || "",
+      });
       if (!response.ok) {
         checkAccount(response)
         throw new Error('Không thể lấy thông tin người dùng');
@@ -67,67 +78,179 @@ const UserProfile = ({ onPasswordChange }) => {
       });
       if (response.ok) {
         const data = await response.json();
-        setAccountInformation(data);
-        alert('Cập nhật thông tin thành công');
-        // Không cập nhật lại token nếu backend không trả về token mới
-        // Nếu backend có trả về token mới, chỉ cập nhật khi data.token là string hợp lệ
         if (data.token && typeof data.token === "string" && data.token.trim() !== "") {
           localStorage.setItem('token', data.token);
         }
+        if (data.user) {
+          setAccountInformation(prev => ({
+            ...prev,
+            ...data.user
+          }));
+        } else {
+          setAccountInformation(prev => ({
+            ...prev,
+            ...data
+          }));
+        }
+        Swal.fire('Thành công!', 'Cập nhật thông tin thành công.', 'success');
       } else {
-        alert('Có lỗi xảy ra khi cập nhật thông tin');
+        Swal.fire('Thất bại!', 'Có lỗi xảy ra khi cập nhật thông tin.', 'error');
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Có lỗi xảy ra');
+      Swal.fire('Lỗi', 'Có lỗi xảy ra', 'error');
     }
   };
+
   const handlePasswordChange = async () => {
     const data = {
-      oldPassword: currentPassword, // Mật khẩu cũ
+      oldPassword: currentPassword,
       newPassword: newPassword,
     };
-
     try {
       const response = await fetch('http://localhost:3000/profile/changepasswordUser', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // Token từ localStorage hoặc session
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(data),
       });
-
       if (response.ok) {
-        const result = await response.json();
-        alert('Mật khẩu đã được thay đổi thành công');
+        await response.json();
+        Swal.fire('Thành công!', 'Mật khẩu đã được thay đổi thành công.', 'success');
       } else {
         const error = await response.json();
-        alert(error.error); // Hiển thị lỗi nếu có
+        Swal.fire('Thất bại!', error.error || 'Có lỗi xảy ra khi thay đổi mật khẩu.', 'error');
       }
     } catch (error) {
       console.error('Error changing password:', error);
-      alert('Có lỗi xảy ra khi thay đổi mật khẩu');
+      Swal.fire('Lỗi', 'Có lỗi xảy ra khi thay đổi mật khẩu', 'error');
     }
   };
 
+  const fetchOrder = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Bạn chưa đăng nhập! Vui lòng đăng nhập để xem thông tin đơn hàng.');
+      return;
+    }
+    try {
+      const response = await fetch('http://localhost:3000/order', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        if (response.status === 403) {
+          alert('Bạn không có quyền truy cập. Vui lòng đăng nhập lại.');
+        } else if (response.status === 404) {
+          alert('Không tìm thấy đơn hàng nào cho tài khoản này.');
+        } else {
+          alert('Đã xảy ra lỗi khi lấy thông tin đơn hàng.');
+        }
+        return;
+      }
+      const data = await response.json();
+      setOrders(data.orders || []);
+    } catch (error) {
+      console.error('Error fetching order data:', error);
+    }
+  };
+
+  const fetchBookings = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const response = await fetch('http://localhost:3000/booking-history', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBookings(data.bookings || []);
+      }
+    } catch (error) {
+      console.error('Error fetching booking history:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (tab === "info") fetchUserData();
+    if (tab === "orders") fetchOrder();
+    if (tab === "bookings") fetchBookings();
+  }, [tab]);
+
+  // Hàm gom các booking cùng ngày, cùng sân, cùng trạng thái, cùng chi nhánh
+  function groupBookings(bookings) {
+    const groups = [];
+    bookings.forEach(b => {
+      const key = `${b.BookingDate}-${b.CourtId}-${b.BranchId}-${b.Status}`;
+      let group = groups.find(g => g.key === key);
+      if (!group) {
+        group = {
+          key,
+          BookingDate: b.BookingDate,
+          CourtId: b.CourtId,
+          BranchId: b.BranchId,
+          BranchName: b.BranchName, // Thêm BranchName vào group
+          Status: b.Status,
+          BookingIds: [],
+          TimeSlotIds: []
+        };
+        groups.push(group);
+      }
+      group.BookingIds.push(b.BookingId);
+      group.TimeSlotIds.push(b.TimeSlotId);
+    });
+    groups.forEach(g => g.TimeSlotIds.sort((a, b) => a - b));
+    return groups;
+  }
+
+  // Nếu bạn có danh sách timeSlotList để map id sang giờ, ví dụ:
+  const timeSlotList = [
+    { id: 1, label: "7-8" },
+    { id: 2, label: "8-9" },
+    { id: 3, label: "9-10" },
+    { id: 4, label: "10-11" },
+    { id: 5, label: "11-12" },
+    { id: 6, label: "12-13" },
+    { id: 7, label: "13-14" },
+    { id: 8, label: "14-15" },
+    { id: 9, label: "15-16" },
+    { id: 10, label: "16-17" },
+    { id: 11, label: "17-18" },
+    { id: 12, label: "18-19" },
+    { id: 13, label: "19-20" },
+    { id: 14, label: "20-21" },
+    { id: 15, label: "21-22" },
+    { id: 16, label: "22-23" },
+    { id: 17, label: "22-23" },
+    { id: 18, label: "22-23" },
+    { id: 19, label: "22-23" },
+    { id: 20, label: "22-23" },
+
+  ];
+  function getTimeLabel(minId, maxId) {
+    const start = timeSlotList.find(t => t.id === minId)?.label?.split('-')[0] || minId;
+    const end = timeSlotList.find(t => t.id === maxId)?.label?.split('-')[1] || maxId;
+    return `${start}-${end}`;
+  }
+
   return (
     <div className="user-profile-container">
-      <h1 className="user-profile-title">
-        Thông tin tài khoản cá nhân
-      </h1>
+      <h1 className="user-profile-title">Thông tin tài khoản cá nhân</h1>
       <div className="user-profile-flex">
         {/* Sidebar */}
         <div className="user-profile-sidebar">
           <div className="user-profile-avatar-card">
-            <img
-              src="/Images/user2.png"
-              alt="avatar"
-              className="user-profile-avatar"
-            />
-            <div className="user-profile-group">
-              <b>Nhóm tài khoản:</b> Người dùng
-            </div>
+            <img src="/Images/user2.png" alt="avatar" className="user-profile-avatar" />
+            <div className="user-profile-group"><b>Nhóm tài khoản:</b> Người dùng</div>
           </div>
         </div>
         {/* Main content */}
@@ -135,29 +258,19 @@ const UserProfile = ({ onPasswordChange }) => {
           <div className="user-profile-card">
             {/* Tabs */}
             <div className="user-profile-tabs">
-              <button
-                className={tab === "info" ? "profile-tab active" : "profile-tab"}
-                onClick={() => setTab("info")}
-              >
-                Thông tin
-              </button>
-              <button
-                className={tab === "password" ? "profile-tab active" : "profile-tab"}
-                onClick={() => setTab("password")}
-              >
-                Đổi mật khẩu
-              </button>
-              <button
-                className={tab === "orders" ? "profile-tab active" : "profile-tab"}
-                onClick={() => setTab("orders")}
-              >
-                Lịch sử đơn hàng
-              </button>
+              <button className={tab === "info" ? "profile-tab active" : "profile-tab"} onClick={() => setTab("info")}>Thông tin</button>
+              <button className={tab === "password" ? "profile-tab active" : "profile-tab"} onClick={() => setTab("password")}>Đổi mật khẩu</button>
+              <button className={tab === "orders" ? "profile-tab active" : "profile-tab"} onClick={() => setTab("orders")}>Lịch sử đơn hàng</button>
+              <button className={tab === "bookings" ? "profile-tab active" : "profile-tab"} onClick={() => setTab("bookings")}>Lịch sử đặt sân</button>
             </div>
             {/* Tab content */}
             <div className="user-profile-tab-content">
-              {tab === "info" && (
+              {tab === "info" && !accountInformation && (
+                <div className="user-profile-container">Đang tải thông tin...</div>
+              )}
+              {tab === "info" && accountInformation && (
                 <form className="user-profile-form">
+                  {/* các input chỉnh sửa */}
                   <div className="profile-field">
                     <label>Tên đăng nhập</label>
                     <input value={accountInformation?.username} disabled className="profile-input disabled" />
@@ -168,78 +281,44 @@ const UserProfile = ({ onPasswordChange }) => {
                   </div>
                   <div className="profile-field">
                     <label>Số điện thoại</label>
-                    <input
-                      value={accountInformation?.mobile}
-                      onChange={(e) => setAccountInformation({ ...accountInformation, mobile: e.target.value })}
-                      className="profile-input"
-                    />
+                    <input value={accountInformation?.mobile} onChange={(e) => setAccountInformation({ ...accountInformation, mobile: e.target.value })} className="profile-input" />
                   </div>
                   <div className="profile-field">
                     <label>Họ</label>
-                    <input
-                      value={accountInformation?.lastname}
-                      onChange={(e) => setAccountInformation({ ...accountInformation, lastname: e.target.value })}
-                      className="profile-input"
-                    />
+                    <input value={accountInformation?.lastname} onChange={(e) => setAccountInformation({ ...accountInformation, lastname: e.target.value })} className="profile-input" />
                   </div>
                   <div className="profile-field">
                     <label>Tên</label>
-                    <input
-                      value={accountInformation?.firstname}
-                      onChange={(e) => setAccountInformation({ ...accountInformation, firstname: e.target.value })}
-                      className="profile-input"
-                    />
+                    <input value={accountInformation?.firstname} onChange={(e) => setAccountInformation({ ...accountInformation, firstname: e.target.value })} className="profile-input" />
                   </div>
                   <div className="profile-field">
                     <label>Địa chỉ</label>
-                    <input
-                      value={accountInformation?.address}
-                      onChange={(e) => setAccountInformation({ ...accountInformation, address: e.target.value })}
-                      className="profile-input"
-                    />
+                    <input value={accountInformation?.address} onChange={(e) => setAccountInformation({ ...accountInformation, address: e.target.value })} className="profile-input" />
                   </div>
                   <div className="profile-field">
                     <label>Giới tính</label>
-                    <select
-                      value={accountInformation?.gender || ''}
-                      onChange={(e) => setAccountInformation({ ...accountInformation, gender: e.target.value })}
-                      className="profile-input"
-                    >
+                    <select value={accountInformation?.gender || ''} onChange={(e) => setAccountInformation({ ...accountInformation, gender: e.target.value })} className="profile-input">
                       <option value="Nam">Nam</option>
                       <option value="Nữ">Nữ</option>
                     </select>
                   </div>
-                  <button type="button" className="profile-save-btn" onClick={handleProfileUpdate}>
-                    LƯU
-                  </button>
+                  <button type="button" className="profile-save-btn" onClick={handleProfileUpdate}>LƯU</button>
                 </form>
               )}
               {tab === "password" && (
                 <form className="user-profile-form password-form">
                   <div className="profile-field">
                     <label>Mật khẩu cũ</label>
-                    <input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="profile-input"
-                    />
+                    <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="profile-input" />
                   </div>
                   <div className="profile-field">
                     <label>Mật khẩu mới</label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="profile-input"
-                    />
+                    <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="profile-input" />
                   </div>
-                  <button type="button" className="profile-save-btn" onClick={handlePasswordChange}>
-                    LƯU
-                  </button>
+                  <button type="button" className="profile-save-btn" onClick={handlePasswordChange}>LƯU</button>
                 </form>
               )}
-              {tab === "orders" && (
+             {tab === "orders" && (
                 <div>
                   <table className="profile-orders-table">
                     <thead>
@@ -247,25 +326,64 @@ const UserProfile = ({ onPasswordChange }) => {
                         <th>Mã đơn hàng</th>
                         <th>Ngày đặt</th>
                         <th>Giá tiền</th>
-                        <th>Chi tiết </th>
+                        <th>Chi tiết</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {ordersSample.length === 0 ? (
+                      {orders.length === 0 ? (
                         <tr>
                           <td colSpan="4" style={{ textAlign: "center" }}>Không có đơn hàng nào.</td>
                         </tr>
                       ) : (
-                        ordersSample.map(order => (
-                          <tr key={order.id}>
-                            <td>{order.id}</td>
-                            <td>{order.date}</td>
-                            <td>{order.total}</td>
+                        orders.map(order => (
+                          <tr key={order.OrderId}>
+                            <td>{order.OrderId}</td>
+                            <td>{order.CreateAt ? new Date(order.CreateAt).toLocaleDateString() : ""}</td>
+                            <td>{order.TotalPrice?.toLocaleString()} đ</td>
                             <td>
-                              <button className="profile-detail-btn">Chi tiết</button>
+                              <Link to={`/order/${order.OrderId}`} >
+                                <button className="profile-detail-btn">Chi tiết</button>
+                              </Link>
                             </td>
                           </tr>
                         ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {tab === "bookings" && (
+                <div>
+                  <table className="profile-orders-table">
+                    <thead>
+                      <tr>
+                        <th>Ngày</th>
+                        <th>Chi nhánh</th>
+                        <th>Sân</th>
+                        <th>Khung giờ</th>
+                        <th>Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bookings.length === 0 ? (
+                        <tr>
+                          <td colSpan="5" style={{ textAlign: "center" }}>Không có lịch sử đặt sân.</td>
+                        </tr>
+                      ) : (
+                        groupBookings(bookings).map((g, idx) => {
+                          const min = Math.min(...g.TimeSlotIds);
+                          const max = Math.max(...g.TimeSlotIds);
+                          const timeLabel = getTimeLabel(min, max);
+                          return (
+                            <tr key={idx}>
+                              <td>{g.BookingDate}</td>
+                              <td>{g.BranchName || g.BranchId}</td>
+                              <td>{g.CourtId}</td>
+                              <td>{timeLabel}</td>
+                              <td>{g.Status}</td>
+                            </tr>
+                          );
+                        })
                       )}
                     </tbody>
                   </table>

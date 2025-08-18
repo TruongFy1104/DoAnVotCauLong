@@ -8,23 +8,36 @@ const Brand = () => {
   }
   const [brandName, setBrandName] = useState('');
   const [brands, setBrands] = useState([]);
+  const [categories, setCategories] = useState([]); // Thêm state cho category
+  const [categoryId, setCategoryId] = useState(''); // State cho category đang chọn
   const [editingBrandId, setEditingBrandId] = useState(null); 
   const [message, setMessage] = useState(""); 
 
+  // Lấy danh sách category
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch("http://localhost:3000/privatesite/categories", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        setCategories(data);
+      } catch (error) {
+        setCategories([]);
+      }
+    };
+    fetchCategories();
+  }, [token]);
+
+  // Lấy danh sách brand
   useEffect(() => {
     const fetchBrands = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("Token không tồn tại. Hãy đăng nhập lại.");
-        }
-
-        // Gửi request với token trong header Authorization
         const response = await fetch("http://localhost:3000/privatesite/brands", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // Thêm token JWT
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -35,17 +48,17 @@ const Brand = () => {
         const data = await response.json();
         setBrands(data);
       } catch (error) {
-        console.error("Error fetching brands:", error);
         setMessage("Đã xảy ra lỗi khi tải danh sách thương hiệu.");
       }
     };
 
     fetchBrands();
-  }, []);
+  }, [token]);
 
   const handleEdit = (brand) => {
     setEditingBrandId(brand.BrandId);
     setBrandName(brand.BrandName);
+    setCategoryId(brand.CategoryId || ''); // Gán category khi sửa
   };
 
   const handleDelete = async (brandId) => {
@@ -54,14 +67,12 @@ const Brand = () => {
     }
 
     try {
-      console.log('id', brandId)
       const response = await fetch(`http://localhost:3000/privatesite/brands/${brandId}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`, // Thêm header Authorization
+          Authorization: `Bearer ${token}`,
         },
-      },
-    );
+      });
 
       if (response.ok) {
         setBrands(brands.filter((brand) => brand.BrandId !== brandId));
@@ -70,7 +81,6 @@ const Brand = () => {
         setMessage("Đã xảy ra lỗi khi xóa thương hiệu.");
       }
     } catch (error) {
-      console.error("Error deleting brand:", error);
       setMessage("Đã xảy ra lỗi khi xóa thương hiệu.");
     }
   };
@@ -82,6 +92,10 @@ const Brand = () => {
       setMessage("Tên thương hiệu không được để trống!");
       return;
     }
+    if (!categoryId) {
+      setMessage("Vui lòng chọn danh mục!");
+      return;
+    }
 
     if (editingBrandId) {
       try {
@@ -91,7 +105,7 @@ const Brand = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({ BrandName: brandName }),
+          body: JSON.stringify({ BrandName: brandName, CategoryId: categoryId }),
         });
         if (response.ok) {
           const updatedBrand = await response.json();
@@ -102,12 +116,12 @@ const Brand = () => {
           );
           setEditingBrandId(null);
           setBrandName('');
+          setCategoryId('');
           setMessage("Cập nhật thương hiệu thành công!");
         } else {
           setMessage("Đã xảy ra lỗi khi cập nhật thương hiệu.");
         }
       } catch (error) {
-        console.error("Error updating brand:", error);
         setMessage("Đã xảy ra lỗi khi cập nhật thương hiệu.");
       }
     } else {
@@ -118,19 +132,19 @@ const Brand = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({ BrandName: brandName }),
+          body: JSON.stringify({ BrandName: brandName, CategoryId: categoryId }),
         });
 
         if (response.ok) {
           const newBrand = await response.json();
           setBrands([...brands, newBrand]);
           setBrandName("");
+          setCategoryId('');
           setMessage("Thêm thương hiệu thành công!");
         } else {
           setMessage("Đã xảy ra lỗi khi thêm thương hiệu.");
         }
       } catch (error) {
-        console.error("Error adding brand:", error);
         setMessage("Đã xảy ra lỗi khi thêm thương hiệu.");
       }
     }
@@ -139,7 +153,8 @@ const Brand = () => {
   const handleCancelEdit = () => {
     setEditingBrandId(null);
     setBrandName('');
-    setMessage(""); // Clear message when canceling edit
+    setCategoryId('');
+    setMessage("");
   };
 
   return (
@@ -161,6 +176,9 @@ const Brand = () => {
                         <h6 className="fw-600 mb-0">Tên thương hiệu</h6>
                       </th>
                       <th className=" text-center">
+                        <h6 className="fw-600 mb-0">Danh mục</h6>
+                      </th>
+                      <th className=" text-center">
                         <h6 className="fw-600 mb-0">Lệnh</h6>
                       </th>
                     </tr>
@@ -173,6 +191,11 @@ const Brand = () => {
                         </td>
                         <td className="border-bottom-0 text-center">
                           <h6 className="fw-600 mb-1">{brand.BrandName}</h6>
+                        </td>
+                        <td className="border-bottom-0 text-center">
+                          <h6 className="fw-600 mb-1">
+                            {categories.find(cat => cat.CategoryId === brand.CategoryId)?.CategoryName || ""}
+                          </h6>
                         </td>
                         <td className="border-bottom-0 text-center">
                           <div className="d-flex gap-3 justify-content-center">
@@ -216,6 +239,22 @@ const Brand = () => {
                     onChange={(e) => setBrandName(e.target.value)}
                     placeholder="Nhập tên thương hiệu"
                   />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="categoryId" className="form-label fw-600">Danh mục</label>
+                  <select
+                    className="form-control"
+                    id="categoryId"
+                    value={categoryId}
+                    onChange={e => setCategoryId(Number(e.target.value))}
+                  >
+                    <option value="">-- Chọn danh mục --</option>
+                    {categories.map(cat => (
+                      <option key={cat.CategoryId} value={cat.CategoryId}>
+                        {cat.CategoryName}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="d-flex justify-content-end">
                   {editingBrandId && (

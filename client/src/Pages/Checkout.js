@@ -15,6 +15,7 @@ export default function Checkout() {
   const [total, setTotal] = useState(0);
   const [userInfo, setUserInfo] = useState({
     Firstname: "",
+    CustomerId: 0,
     Lastname: "",
     Address: "",
     Mobile: "",
@@ -94,7 +95,7 @@ export default function Checkout() {
       !userInfo.Firstname ||
       !userInfo.Lastname
     ) {
-      alert('Vui lòng điền đầy đủ thông tin cá nhân.');
+      alert('Vui lòng điền đầy đủ họ tên và email.');
       return;
     }
 
@@ -108,15 +109,13 @@ export default function Checkout() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        cart, // Mỗi item: { ProductId, ProductName, Price, Quantity, Size, Avatar }
+        cart, 
         paymentMethod: form.payment,
-        address: form.address,
-        mobile: form.phone,
-        email: form.email,
-        firstname: form.firstName,
-        lastname: form.lastName,
-        subPrice,
-        discount,
+        address: userInfo.Address, // Đúng chữ thường
+        mobile: userInfo.Mobile,   // Đúng chữ thường
+        email: userInfo.Email,
+        firstname: userInfo.Firstname,
+        lastname: userInfo.Lastname,
       }),
     })
       .then((response) => response.json())
@@ -148,29 +147,57 @@ export default function Checkout() {
         </div>
           <div className="checkout-section-title">THÔNG TIN KHÁCH HÀNG</div>
           <div className="checkout-row">
-            <div className="checkout-field">
-              <label>First Name *</label>
-              <input name="Firstname" value={userInfo.Firstname} onChange={handleInputChange} placeholder="Nhập tên" />
-            </div>
-            <div className="checkout-field">
-              <label>Last Name *</label>
-              <input name="Lastname" value={userInfo.Lastname} onChange={handleInputChange} placeholder="Nhập họ" />
-            </div>
-          </div>
-          <div className="checkout-field">
-            <label>Địa chỉ *</label>
-            <input name="Address" value={userInfo.Address} onChange={handleInputChange} placeholder="Nhập địa chỉ" />
-          </div>
-          <div className="checkout-row">
-            <div className="checkout-field">
-              <label>Phone*</label>
-              <input name="Mobile" value={userInfo.Mobile} onChange={handleInputChange} placeholder="Nhập số điện thoại" />
-            </div>
-            <div className="checkout-field">
-              <label>Email Address *</label>
-              <input name="Email" value={userInfo.Email} onChange={handleInputChange} placeholder="" />
-            </div>
-          </div>
+  <div className="checkout-field">
+    <label>First Name *</label>
+    <input
+      name="Firstname"
+      value={userInfo.Firstname}
+      onChange={handleInputChange}
+      placeholder="Nhập tên"
+      readOnly={!!userInfo.Firstname} // readonly nếu đã có tên
+    />
+  </div>
+  <div className="checkout-field">
+    <label>Last Name *</label>
+    <input
+      name="Lastname"
+      value={userInfo.Lastname}
+      onChange={handleInputChange}
+      placeholder="Nhập họ"
+      readOnly={!!userInfo.Lastname} // readonly nếu đã có họ
+    />
+  </div>
+</div>
+<div className="checkout-field">
+  <label>Địa chỉ *</label>
+  <input
+    name="Address"
+    value={userInfo.Address || ""}
+    onChange={handleInputChange}
+    placeholder="Nhập địa chỉ"
+  />
+</div>
+<div className="checkout-row">
+  <div className="checkout-field">
+    <label>Phone*</label>
+    <input
+      name="Mobile"
+      value={userInfo.Mobile || ""}
+      onChange={handleInputChange}
+      placeholder="Nhập số điện thoại"
+    />
+  </div>
+  <div className="checkout-field">
+    <label>Email Address *</label>
+    <input
+      name="Email"
+      value={userInfo.Email}
+      onChange={handleInputChange}
+      placeholder=""
+      readOnly={!!userInfo.Email} // readonly nếu đã có email
+    />
+  </div>
+</div>
         </div>
         {/* Đơn hàng */}
         <div className="checkout-order">

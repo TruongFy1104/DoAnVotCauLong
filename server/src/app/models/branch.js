@@ -1,19 +1,19 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/db');
 
-const OrderStatus = sequelize.define('OrderStatus', {
-    OrderStatusId: {
+const Branch = sequelize.define('Branch', {
+    BranchId: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
     },
-    OrderStatusName: {
+    BranchName: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: false,
     },
 }, {
-    tableName: 'orderstatus',
+    tableName: 'Branch',
     timestamps: false,
 });
 
-module.exports = OrderStatus;
+module.exports = Branch;

@@ -18,6 +18,7 @@ exports.getAllProducts = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 exports.getProductById = async (req, res) => {
     try {
         const { id } = req.params; // Lấy id từ URL

@@ -41,7 +41,6 @@ exports.getOrderDetails = async (req, res) => {
         const { orderId } = req.params; // Lấy orderId từ params
 
         const orderDetail = await Order.findOne();
-        console.log(orderDetail)
 
         if (!order) {
             return res.status(404).json({ message: 'Đơn hàng không tìm thấy' });
@@ -197,31 +196,37 @@ exports.changePassword = async (req, res) => {
 
 exports.changeGroupAccount = async (req, res) => {
     try {
-        const { id } = req.params; // Lấy id từ params
+        const { id } = req.params;
         const { GroupId } = req.body;
+        const groupId = Number(GroupId);
 
-        // Tìm tài khoản theo AccountId
         const account = await Account.findOne({
-            where: { AccountId: id }, // Truy vấn theo AccountId
+            where: { AccountId: id },
         });
+
+
+
 
         if (!account) {
             return res.status(404).json({ message: "Tài khoản không tìm thấy." });
         }
-        if(account.IdGroup === 1){
-            if(account.IdGroup == GroupId){
-                res.status(500).json({message: "Tài khoản này hiện tài đang quyền quản trị"})
+
+        // console.log("AccountId:", id, "Current:", account.IdGroup, "Change to:", groupId);
+
+        if (account.IdGroup === 1) {
+            if (account.IdGroup === groupId) {
+                return res.status(400).json({ message: "Tài khoản này hiện tại đang quyền quản trị" });
             }
             account.IdGroup = 2;
-        }else{
-            if(account.IdGroup === GroupId){
-                res.status(500).json({message: "Tài khoản này hiện tài đang quyền người dùng"})
+        } else {
+            if (account.IdGroup === groupId) {
+                return res.status(400).json({ message: "Tài khoản này hiện tại đang quyền người dùng" });
             }
             account.IdGroup = 1;
         }
         await account.save();
-        res.json(account); // Trả về tài khoản tìm thấy
+        return res.json(account);
     } catch (error) {
-        res.status(500).json({ error: error.message }); // Xử lý lỗi
+        return res.status(500).json({ error: error.message });
     }
 };

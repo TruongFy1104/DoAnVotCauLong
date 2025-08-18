@@ -12,7 +12,6 @@ const DetailAccount = ({ onPasswordChange }) => {
     const account = state?.account;
     const { id } = useParams();
     const handleRoleAssignment = async () => {
-        console.log(account)
         try {
           const result = await Swal.fire({
             title: 'Chọn quyền cho người dùng',
@@ -40,19 +39,20 @@ const DetailAccount = ({ onPasswordChange }) => {
               }
             );
       
+            const data = await response.json();
+      
             if (response.ok) {
               Swal.fire(
                 'Thành công!',
                 `Đã gán quyền: ${
                   result.value === '1' ? 'Quản trị viên' : 'Người dùng'
-                }`,
+                } cho tài khoản ${account.Username}`,
                 'success'
-              );
-              window.location.reload(true);
+              ).then(() => window.location.reload(true));
             } else {
               Swal.fire(
                 'Thất bại!',
-                'Không thể thay đổi quyền, hãy thử lại sau.',
+                data.message || 'Không thể thay đổi quyền, hãy thử lại sau.',
                 'error'
               );
             }

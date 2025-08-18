@@ -7,6 +7,10 @@ import AddProductForm from "../Pages/Admin/AddItem";
 import EditProductForm from "../Pages/Admin/EditProduct";
 import Orders from "../Pages/Admin/Order";
 import Brand from "../Pages/Admin/Brand";
+import Branch from "../Pages/Admin/Branch";
+import SlotTime from "../Pages/Admin/SlotTime";
+import Court from "../Pages/Admin/Court";
+import BookingAdmin from "../Pages/Admin/BookingAdmin";
 import Category from "../Pages/Admin/Category";
 import ProfileAdmin from "../Pages/Admin/ProfileAdmin";
 import AccountManagement from "../Pages/Admin/AccountManagement";
@@ -131,7 +135,44 @@ const AdminLayout = () => {
                   <span className="hide-menu">Doanh thu</span>
                 </Link>
               </li>
+              <li className="nav-small-cap">
+                <i className="ti ti-dots nav-small-cap-icon fs-4"></i>
+                <span className="hide-menu">Quản lý sân cầu</span>
+              </li>
+               <li className="sidebar-item">
+                <Link className="sidebar-link" to="/privatesite/branch">
+                  <span>
+                    <i className="ti ti-settings"></i>
+                  </span>
+                  <span className="hide-menu">Chi nhánh</span>
+                </Link>
+              </li>
+               <li className="sidebar-item">
+                <Link className="sidebar-link" to="/privatesite/slot-times">
+                  <span>
+                    <i className="ti ti-settings"></i>
+                  </span>
+                  <span className="hide-menu">Khung giờ</span>
+                </Link>
+              </li>
+               <li className="sidebar-item">
+                <Link className="sidebar-link" to="/privatesite/courts">
+                  <span>
+                    <i className="ti ti-settings"></i>
+                  </span>
+                  <span className="hide-menu">Sân</span>
+                </Link>
+              </li>
+              <li className="sidebar-item">
+                <Link className="sidebar-link" to="/privatesite/booking">
+                  <span>
+                    <i className="ti ti-settings"></i>
+                  </span>
+                  <span className="hide-menu">Đơn đặt sân</span>
+                </Link>
+              </li>
             </ul>
+            
           </nav>
         </div>
       </aside>
@@ -212,6 +253,10 @@ const AdminLayout = () => {
           <Route path="addproduct/:id" element={<AddProductForm />} />
           <Route path="edit" element={<EditProductForm />} />
           <Route path="brand" element={<Brand />} />
+          <Route path="branch" element={<Branch />} />
+          <Route path="booking" element={<BookingAdmin />} />
+          <Route path="slot-times" element={<SlotTime />} />
+          <Route path="courts" element={<Court />} />
           <Route path="categories" element={<Category />} />
           <Route path="Order" element={<Orders />} />
           <Route path="orders/:id" element={<OrderDetails />} />

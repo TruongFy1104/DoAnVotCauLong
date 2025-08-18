@@ -22,10 +22,11 @@ const Login =()=>{
           { username, password },
           { withCredentials: true }
         );
-        localStorage.setItem('token', response.data.token); //  JWT token
+        const { data } = response;
+        localStorage.setItem('token', data.token);
         setMessage('Đăng nhập thành công');
-        const userRole = response.data.user.idgroup;
-        if (response.data.message === "Đăng nhập thành công") {
+        const userRole = data.user.idgroup;
+        if (data.message === "Đăng nhập thành công") {
           alert("Đăng nhập thành công!");
           if (userRole === 1) {
             window.location.href = '/privatesite/dashboard'

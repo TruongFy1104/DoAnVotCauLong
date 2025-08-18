@@ -7,6 +7,7 @@ const Category = () => {
     throw new Error("Token không tồn tại. Hãy đăng nhập lại.");
   }
   const [categoryName, setCategoryName] = useState('');
+  const [categoryId, setCategoryId] = useState(''); // Thêm state nếu muốn nhập Id (không khuyến khích tự nhập Id nếu auto increment)
   const [categories, setCategories] = useState([]);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [message, setMessage] = useState("");
@@ -72,6 +73,17 @@ const Category = () => {
 
     if (!categoryName.trim()) {
       setMessage("Tên thể loại không được để trống!");
+      return;
+    }
+
+    // Kiểm tra trùng tên (không phân biệt hoa thường)
+    const nameLower = categoryName.trim().toLowerCase();
+    const isDuplicate = categories.some(cat =>
+      cat.CategoryName.trim().toLowerCase() === nameLower &&
+      (!editingCategoryId || cat.CategoryId !== editingCategoryId)
+    );
+    if (isDuplicate) {
+      setMessage("Tên thể loại đã tồn tại!");
       return;
     }
 
@@ -209,6 +221,20 @@ const Category = () => {
                     placeholder="Nhập tên thể loại"
                   />
                 </div>
+                {/* Nếu muốn nhập thêm CategoryId (không khuyến khích nếu tự tăng) */}
+                {/* 
+                <div className="mb-3">
+                  <label htmlFor="categoryId" className="form-label fw-600">Mã thể loại</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    id="categoryId"
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                    placeholder="Nhập mã thể loại"
+                  />
+                </div>
+                */}
                 <div className="d-flex justify-content-end">
                   {editingCategoryId && (
                     <button

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { Link } from "react-router-dom";
+import {SlidebarFeatures,SlidebarGallery} from "../Component/Slidebar/Slidebar";  
+import Slidebar from "../Component/Slidebar/Slidebar";
 import "../Css/Style.css"; 
 const CountdownTimer = () => <div>00:00:00</div>;
 const newsList = [
@@ -14,7 +16,6 @@ const newsList = [
 ];
 
 
-// ---- SỬA ĐOẠN NÀY ----
 export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [rackets, setRackets] = useState([]);
@@ -51,6 +52,11 @@ export default function HomePage() {
 
   return (
     <div className="homepage-main">
+      <div className="advertisement">
+        <Slidebar />
+        <SlidebarFeatures />
+        <SlidebarGallery />
+      </div>
       <ProductCarousel products={products} />
       <RacketGrid rackets={rackets} />
       <div className="section-divider">
@@ -174,7 +180,7 @@ function ProductCarousel({ products }) {
         <span className="section-title">HÀNG HOT BÁN CHẠY</span>
       </div>
       <div
-        className="product-carousel"
+        className="product-carousel" 
         ref={carouselRef}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
@@ -212,7 +218,7 @@ function ProductCarousel({ products }) {
                     >
                       🧺
                     </span>{" "}
-                    Thêm vào giỏ
+                    Xem chi tiết
                   </button>
                 </Link>
               </div>
@@ -267,7 +273,8 @@ function RacketGrid({ rackets }) {
                 <div className="product-info">
                   <div className="product-name">{p.ProductName}</div>
                   <div className="product-price">{Number(p.Price).toLocaleString()} VNĐ</div>
-                  <button
+                  <Link to={`/products/productdetails/${p.ProductId}`}>
+                   <button
                     className="add-to-cart-btn"
                     onMouseEnter={() => handleCartHover(row * 5 + idx)}
                     onMouseLeave={() => handleCartLeave(row * 5 + idx)}
@@ -280,8 +287,10 @@ function RacketGrid({ rackets }) {
                     >
                       🛍️
                     </span>{" "}
-                    Thêm vào giỏ
+                    Xem chi tiết
                   </button>
+                  </Link>
+                 
                 </div>
               </div>
             ))}
@@ -289,7 +298,9 @@ function RacketGrid({ rackets }) {
         ))}
       </div>
       <div style={{ textAlign: "center", marginTop: 24 }}>
-        <button className="view-all-btn">Xem tất cả »</button>
+         <Link to="/allproducts?category=1">
+          <button className="view-all-btn">Xem tất cả »</button>
+        </Link>
       </div>
     </div>
   );
@@ -332,6 +343,7 @@ function ClothesGrid({ clothes }) {
                 <div className="product-info">
                   <div className="product-name">{p.ProductName}</div>
                   <div className="product-price">{Number(p.Price).toLocaleString()} VNĐ</div>
+                  <Link to={`/products/productdetails/${p.ProductId}`}>
                   <button
                     className="add-to-cart-btn"
                     onMouseEnter={() => handleCartHover(row * 5 + idx)}
@@ -345,8 +357,9 @@ function ClothesGrid({ clothes }) {
                     >
                       🛍️
                     </span>{" "}
-                    Thêm vào giỏ
+                    Xem chi tiết
                   </button>
+                  </Link>
                 </div>
               </div>
             ))}
@@ -354,7 +367,9 @@ function ClothesGrid({ clothes }) {
         ))}
       </div>
       <div style={{ textAlign: "center", marginTop: 24 }}>
-        <button className="view-all-btn">Xem tất cả »</button>
+       <Link to="/allproducts?category=2">
+          <button className="view-all-btn">Xem tất cả »</button>
+        </Link>
       </div>
     </div>
   );
@@ -397,7 +412,8 @@ function ShoesGrid({ shoes }) {
                 <div className="product-info">
                   <div className="product-name">{p.ProductName}</div>
                   <div className="product-price">{Number(p.Price).toLocaleString()} VNĐ</div>
-                  <button
+                  <Link to={`/products/productdetails/${p.ProductId}`}>
+                    <button
                     className="add-to-cart-btn"
                     onMouseEnter={() => handleCartHover(row * 5 + idx)}
                     onMouseLeave={() => handleCartLeave(row * 5 + idx)}
@@ -410,8 +426,10 @@ function ShoesGrid({ shoes }) {
                     >
                       🛍️
                     </span>{" "}
-                    Thêm vào giỏ
+                    Xem chi tiết
                   </button>
+                  </Link>
+                 
                 </div>
               </div>
             ))}
@@ -419,7 +437,9 @@ function ShoesGrid({ shoes }) {
         ))}
       </div>
       <div style={{ textAlign: "center", marginTop: 24 }}>
-        <button className="view-all-btn">Xem tất cả »</button>
+         <Link to="/allproducts?category=3">
+          <button className="view-all-btn">Xem tất cả »</button>
+        </Link>
       </div>
     </div>
   );

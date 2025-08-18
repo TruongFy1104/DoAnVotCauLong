@@ -631,3 +631,11 @@ div.main_tab {
     background: #ffcb2b;
     color: #12181a
 }
+.slot-time-form-box {
+  border: 1.5px solid #e0e0e0;
+  border-radius: 12px;
+  background: #fafbfc;
+  padding: 20px 18px 12px 18px;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}

@@ -5,40 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { FaRegUser } from "react-icons/fa";
 const {decodeJWT} = require('../../Pages/Common')
 
-const productMenu = [
-  {
-    label: "Vợt cầu lông",
-    brands: ["Yonex", "Victor", "Lining", "Mizuno"]
-  },
-  {
-    label: "Giày cầu lông",
-    brands: ["Yonex", "Victor", "Lining", "Mizuno"]
-  },
-  {
-    label: "Quần áo cầu lông",
-    brands: ["Yonex", "Victor", "Lining", "Mizuno"]
-  },
-  {
-    label: "Phụ kiện",
-    brands: ["Yonex", "Victor", "Lining", "Mizuno"]
-  }
-];
-
-const suggestedProducts = [
-  {
-    name: "Vợt Yonex Astrox 88D Pro",
-    price: "3.990.000₫",
-    image: "Images/gay.webp",
-  },
-  // ...thêm sản phẩm nếu muốn
-];
-
 const Header = () => {
-  // useEffect(() => {
-  //   localStorage.removeItem("token");
-  //   localStorage.removeItem("username");
-  // }, []);
-
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [focused, setFocused] = useState(false);
@@ -52,6 +19,8 @@ const Header = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [debounceTimer, setDebounceTimer] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
   const navigate = useNavigate(); 
   const searchRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -107,11 +76,23 @@ const Header = () => {
       const decodedToken = decodeJWT(token);
       setIdGroup(decodedToken.idgroup)
       // console.log(decodedToken.idgroup)
-      setUsername(localStorage.getItem("username")); // Lưu tên người dùng từ localStorage (nếu có)
+      setUsername(localStorage.getItem("username")); 
     }
 
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
     setCartItems(cart);
+  }, []);
+
+  useEffect(() => {
+    fetch("http://localhost:3000/categories")
+      .then(res => res.json())
+      .then(data => setCategories(data))
+      .catch(() => setCategories([]));
+
+    fetch("http://localhost:3000/brands")
+      .then(res => res.json())
+      .then(data => setBrands(data))
+      .catch(() => setBrands([]));
   }, []);
 
   // Đóng search và dropdown khi click ra ngoài
@@ -123,8 +104,8 @@ const Header = () => {
       ) {
         setSearchOpen(false);
         setFocused(false);
-        setSearch("");           // <-- Thêm dòng này để xóa nội dung search khi đóng
-        setSearchResults([]);    // <-- Xóa luôn kết quả gợi ý nếu muốn
+        setSearch("");          
+        setSearchResults([]);    
       }
       if (
         dropdownRef.current &&
@@ -138,7 +119,6 @@ const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Đóng dropdown user khi click ra ngoài
   useEffect(() => {
     function handleClickOutside(event) {
       if (
@@ -156,8 +136,8 @@ const Header = () => {
   
 const handleViewDetails = (productId) => {
     setSearchOpen(false);
-    setSearch(""); // Xóa nội dung tìm kiếm
-    setSearchResults([]); // Xóa kết quả tìm kiếm
+    setSearch(""); 
+    setSearchResults([]); 
     navigate(`/products/productdetails/${productId}`);
   };
   return (
@@ -171,53 +151,59 @@ const handleViewDetails = (productId) => {
       <nav className="header-nav">
         <ul>
           <li><Link to="/home"><a href="#">Home</a></Link></li>
-
           <li
             className="dropdown-parent"
             ref={dropdownRef}
             onMouseEnter={() => setProductDropdown(true)}
             onMouseLeave={() => { setProductDropdown(false); setHoveredType(null); }}
           >
-            <a
-              href="#"
+            <Link
+              to="/allproducts"
               className=""
-              onClick={e => { e.preventDefault(); setProductDropdown(v => !v); }}
+              onClick={() => { setProductDropdown(false); setHoveredType(null); }}
+              style={{ display: "block", width: "100%" }}
             >
               Products
-            </a>
+            </Link>
             <div className={`dropdown-menu${productDropdown ? " show" : ""}`}>
               <div className="dropdown-level1">
-                {productMenu.map((cat, idx) => (
-                  <button
-                    key={cat.label}
+                {categories.map((cat, idx) => (
+                  <Link
+                    key={cat.CategoryId}
+                    to={`/allproducts?category=${cat.CategoryId}`}
                     className={`dropdown-level1-item${hoveredType === idx ? " active" : ""}`}
                     onMouseEnter={() => setHoveredType(idx)}
-                    onFocus={() => setHoveredType(idx)}
-                    tabIndex={0}
+                    style={{ display: "block" }}
                   >
-                    {cat.label}
-                  </button>
+                    {cat.CategoryName}
+                  </Link>
                 ))}
               </div>
-              {hoveredType !== null && (
+              {hoveredType !== null && categories[hoveredType] && (
                 <div className="dropdown-level2">
-                  <div className="dropdown-level2-title">{productMenu[hoveredType].label}</div>
+                  <div className="dropdown-level2-title">{categories[hoveredType].CategoryName}</div>
                   <ul className="dropdown-level2-list">
-                    {productMenu[hoveredType].brands.map(brand => (
-                      <li key={brand}>
-                        <a href={`#${productMenu[hoveredType].label}-${brand}`}>
-                          {brand}
-                        </a>
-                      </li>
-                    ))}
+                    {brands
+                      .filter(brand => brand.CategoryId === categories[hoveredType].CategoryId)
+                      .map(brand => (
+                        <li key={brand.BrandId}>
+                          <Link
+                            to={`/allproducts?category=${categories[hoveredType].CategoryId}&brand=${brand.BrandId}`}
+                          >
+                            {brand.BrandName}
+                          </Link>
+                        </li>
+                      ))}
                   </ul>
                 </div>
               )}
             </div>
           </li>
           <li><a href="#">Page</a></li>
-          <li><a href="#">About Us</a></li>
+          <li><Link to="/aboutus"><a href="#">About Us</a></Link></li>
           <li><a href="#">Contact</a></li>
+          <li><Link to="/booking"><a href="#">Đặt sân</a></Link></li>
+
         </ul>
       </nav>
       <div className="header-actions">
