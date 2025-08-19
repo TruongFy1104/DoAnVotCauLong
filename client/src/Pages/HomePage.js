@@ -4,7 +4,54 @@ import { Link } from "react-router-dom";
 import {SlidebarFeatures,SlidebarGallery} from "../Component/Slidebar/Slidebar";  
 import Slidebar from "../Component/Slidebar/Slidebar";
 import "../Css/Style.css"; 
-const CountdownTimer = () => <div>00:00:00</div>;
+// Component đồng hồ đếm ngược
+function CountdownTimer({ targetDate }) {
+  const calculateTimeLeft = () => {
+    const difference = +new Date(targetDate) - +new Date();
+    let timeLeft = {};
+    if (difference > 0) {
+      timeLeft = {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+      };
+    } else {
+      timeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+    }
+    return timeLeft;
+  };
+
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [targetDate]);
+
+  return (
+    <div style={{ display: "flex", gap: "16px", justifyContent: "center", margin: "16px 0" }}>
+      <div style={{ background: "#fff", borderRadius: 8, padding: "8px 16px", minWidth: 60, textAlign: "center", boxShadow: "0 2px 8px #0001" }}>
+        <div style={{ fontWeight: 700, fontSize: 22 }}>{String(timeLeft.days).padStart(2, "0")}</div>
+        <div style={{ fontWeight: 500, fontSize: 15, color: "#222" }}>Ngày</div>
+      </div>
+      <div style={{ background: "#fff", borderRadius: 8, padding: "8px 16px", minWidth: 60, textAlign: "center", boxShadow: "0 2px 8px #0001" }}>
+        <div style={{ fontWeight: 700, fontSize: 22 }}>{String(timeLeft.hours).padStart(2, "0")}</div>
+        <div style={{ fontWeight: 500, fontSize: 15, color: "#222" }}>Giờ</div>
+      </div>
+      <div style={{ background: "#fff", borderRadius: 8, padding: "8px 16px", minWidth: 60, textAlign: "center", boxShadow: "0 2px 8px #0001" }}>
+        <div style={{ fontWeight: 700, fontSize: 22 }}>{String(timeLeft.minutes).padStart(2, "0")}</div>
+        <div style={{ fontWeight: 500, fontSize: 15, color: "#222" }}>Phút</div>
+      </div>
+      <div style={{ background: "#fff", borderRadius: 8, padding: "8px 16px", minWidth: 60, textAlign: "center", boxShadow: "0 2px 8px #0001" }}>
+        <div style={{ fontWeight: 700, fontSize: 22 }}>{String(timeLeft.seconds).padStart(2, "0")}</div>
+        <div style={{ fontWeight: 500, fontSize: 15, color: "#222" }}>Giây</div>
+      </div>
+    </div>
+  );
+}
 const newsList = [
   {
     id: 1,
@@ -175,9 +222,14 @@ function ProductCarousel({ products }) {
 
   return (
     <div className="product-section">
-      <div className="product-section-header">
-        <span className="hot-label">🔥</span>
-        <span className="section-title">HÀNG HOT BÁN CHẠY</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" }}>
+        <div className="product-section-header">
+          <span className="hot-label">🔥</span>
+          <span className="section-title">HÀNG HOT BÁN CHẠY</span>
+        </div>
+        <div style={{ minWidth: 320, marginTop: 0 }}>
+          <CountdownTimer targetDate={new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)} />
+        </div>
       </div>
       <div
         className="product-carousel" 

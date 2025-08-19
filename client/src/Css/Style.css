@@ -230,7 +230,18 @@ aside::-webkit-scrollbar {
   color:black;
   transform: translateY(-2px) scale(1.04);
 }
+.sort-box {
+  border: 2px solid #000;
+  border-radius: 8px;
+  /* ... */
+}
 
+.sort-dropdown {
+  border: 2px solid #000;
+  border-top: none; /* Để nối liền với box phía trên */
+  border-radius: 0 0 8px 8px;
+  /* ... */
+}
 .racket-section {
   max-width: 1200px;           /* Giới hạn chiều rộng */
   margin: 40px auto 0 auto;    /* Căn giữa và cách trên */

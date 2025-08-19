@@ -24,6 +24,8 @@ const AllProducts = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortOption, setSortOption] = useState("default");
+  const [sortBoxFocus, setSortBoxFocus] = useState(false);
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
 
   const navigate = useNavigate();
   const query = useQuery();
@@ -224,7 +226,6 @@ const AllProducts = () => {
             Bỏ lọc
           </button>
         </aside>
-        {/* Main content */}
         <main style={{
           flex: 1,
           background: "#eaf4fb",
@@ -233,29 +234,46 @@ const AllProducts = () => {
           border: "1px solid #b6d4ef",
           padding: 24
         }}>
-          {/* Sắp xếp phía trên bên phải */}
           <div style={{
             display: "flex",
             justifyContent: "flex-end",
             alignItems: "center",
             marginBottom: 18
           }}>
-            <span style={{ fontWeight: 500, fontSize: 15, marginRight: 8 }}>Sắp xếp:</span>
-            <select
-              value={sortOption}
-              onChange={e => setSortOption(e.target.value)}
+            <div
               style={{
-                border: "1px solid #ddd",
-                borderRadius: 6,
-                padding: "4px 12px"
+                background: "#f5faff",
+                border: (sortBoxFocus || sortDropdownOpen) ? "2px solid #007bff" : "2px solid #b6d4ef",
+                borderRadius: 10,
+                padding: "10px 18px",
+                display: "flex",
+                alignItems: "center",
+                boxShadow: "none",
+                transition: "border-color 0.18s"
               }}
             >
-              <option value="default">Mặc định</option>
-              <option value="price-asc">Giá tăng dần</option>
-              <option value="price-desc">Giá giảm dần</option>
-              <option value="az">A-Z</option>
-              <option value="za">Z-A</option>
-            </select>
+              <span style={{ fontWeight: 500, fontSize: 15, marginRight: 8 }}>Sắp xếp:</span>
+              <select
+                value={sortOption}
+                onChange={e => setSortOption(e.target.value)}
+                onFocus={() => setSortBoxFocus(true)}
+                onBlur={() => { setSortBoxFocus(false); setTimeout(() => setSortDropdownOpen(false), 150); }}
+                onMouseDown={() => setSortDropdownOpen(true)}
+                style={{
+                  border: (sortBoxFocus || sortDropdownOpen) ? "1.5px solid #007bff" : "1px solid #ddd",
+                  borderRadius: 6,
+                  padding: "4px 12px",
+                  outline: "none",
+                  transition: "border-color 0.18s"
+                }}
+              >
+                <option value="default">Mặc định</option>
+                <option value="price-asc">Giá tăng dần</option>
+                <option value="price-desc">Giá giảm dần</option>
+                <option value="az">A-Z</option>
+                <option value="za">Z-A</option>
+              </select>
+            </div>
           </div>
           {/* Tiêu đề */}
           <div style={{
