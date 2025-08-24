@@ -1,6 +1,6 @@
 module.exports = {
-  vnp_TmnCode: "EIO7HSIZ",
-  vnp_HashSecret: "VHSJ2T9KLEMDQWN0MUAB5BVGVHI9TQ5R",
+  vnp_TmnCode: "31IY64MS",
+  vnp_HashSecret: "6CWYMYU82JHFE6SP7FKDFTRLKXEKLIIJ",
   vnp_Url: "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
-  vnp_ReturnUrl: "http://localhost:3000/checkout/vnpay_return" 
+  vnp_ReturnUrl: "http://localhost:3000/vnpay_return" 
 };

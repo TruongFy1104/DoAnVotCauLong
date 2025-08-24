@@ -12,6 +12,8 @@ import Checkout from "../Pages/Checkout";
 import OrderDetails from "../Pages/OrderDetail";
 import BookingView from "../Pages/BookingView";
 import BookingCheckout from "../Pages/BookingCheckout";
+import PaymentSuccess from "../Pages/PaymentSuccess";
+import PaymentFailed from "../Pages/PaymentFailed";
 const UserLayout = () => {
   return (
     <div>
@@ -19,15 +21,20 @@ const UserLayout = () => {
       <div>
         <Routes>
           <Route path="/" element={<Navigate to="/home" />} />
-          <Route path="/home" element={<HomePage  />} />
-          <Route path="/booking" element={<BookingView  />} />
-          <Route path="/bookingcheckout" element={<BookingCheckout  />} />
-          <Route path="/products/productdetails/:id" element={<ProductDetail />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/booking" element={<BookingView />} />
+          <Route path="/bookingcheckout" element={<BookingCheckout />} />
+          <Route
+            path="/products/productdetails/:id"
+            element={<ProductDetail />}
+          />
           <Route path="/allproducts" element={<AllProduct />} />
           <Route path="/aboutus" element={<AboutUs />} />
-          <Route path="/cart" element={<Cart />} /> 
-          <Route path="/checkout" element={<Checkout />} /> 
-          <Route path="/UserProfile" element={<UserProfile/>}></Route>
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-failed" element={<PaymentFailed />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/UserProfile" element={<UserProfile />}></Route>
           <Route path="/order/:orderId" element={<OrderDetails />} />
         </Routes>
       </div>
