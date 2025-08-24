@@ -283,12 +283,7 @@ exports.createVNPayPaymentUrl = async (req, res) => {
     console.log("createDate:", createDate, "orderId:", orderId);
 
     // Lấy IP khách hàng
-    let ipAddr = req.headers['x-forwarded-for'] ||
-                 req.connection.remoteAddress ||
-                 req.socket?.remoteAddress ||
-                 (req.connection.socket ? req.connection.socket.remoteAddress : null);
-    if (ipAddr === '::1' || ipAddr === '::ffff:127.0.0.1') ipAddr = '127.0.0.1';
-    console.log("ipAddr:", ipAddr);
+
 
     // Tạo params ban đầu (KHÔNG có vnp_SecureHash)
     let vnp_Params = {
@@ -302,7 +297,6 @@ exports.createVNPayPaymentUrl = async (req, res) => {
       vnp_OrderType: 'other',
       vnp_Amount: amount * 100, 
       vnp_ReturnUrl: returnUrl,
-      vnp_IpAddr: ipAddr,
       vnp_CreateDate: createDate
     };
     if (bankCode) vnp_Params.vnp_BankCode = bankCode;
