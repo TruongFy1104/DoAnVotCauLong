@@ -180,6 +180,31 @@ const UserProfile = ({ onPasswordChange }) => {
     }
   };
 
+  const handleCancelBooking = async (bookingIds) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const confirm = window.confirm("Bạn có chắc muốn hủy đặt sân này?");
+      if (!confirm) return;
+      const response = await fetch('http://localhost:3000/booking/cancel-many',  {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ bookingIds })
+      });
+      if (response.ok) {
+        Swal.fire('Thành công!', 'Đã hủy đặt sân.', 'success');
+        fetchBookings(); // Refresh lại danh sách
+      } else {
+        Swal.fire('Thất bại!', 'Không thể hủy đặt sân.', 'error');
+      }
+    } catch (error) {
+      Swal.fire('Lỗi', 'Có lỗi xảy ra khi hủy đặt sân.', 'error');
+    }
+  };
+
   useEffect(() => {
     if (tab === "info") fetchUserData();
     if (tab === "orders") fetchOrder();
@@ -362,18 +387,21 @@ const UserProfile = ({ onPasswordChange }) => {
                         <th>Sân</th>
                         <th>Khung giờ</th>
                         <th>Trạng thái</th>
+                        <th>Thao tác</th>
                       </tr>
                     </thead>
                     <tbody>
                       {bookings.length === 0 ? (
                         <tr>
-                          <td colSpan="5" style={{ textAlign: "center" }}>Không có lịch sử đặt sân.</td>
+                          <td colSpan="6" style={{ textAlign: "center" }}>Không có lịch sử đặt sân.</td>
                         </tr>
                       ) : (
                         groupBookings(bookings).map((g, idx) => {
                           const min = Math.min(...g.TimeSlotIds);
                           const max = Math.max(...g.TimeSlotIds);
                           const timeLabel = getTimeLabel(min, max);
+                          // Chỉ cho hủy nếu trạng thái chưa hủy
+                        const canCancel = !["Đã hủy", "User hủy sân", "Thành công"].includes(g.Status);
                           return (
                             <tr key={idx}>
                               <td>{g.BookingDate}</td>
@@ -381,6 +409,16 @@ const UserProfile = ({ onPasswordChange }) => {
                               <td>{g.CourtId}</td>
                               <td>{timeLabel}</td>
                               <td>{g.Status}</td>
+                              <td>
+                                {canCancel && (
+                                  <button
+                                    className="profile-detail-btn"
+                                    onClick={() => handleCancelBooking(g.BookingIds)}
+                                  >
+                                    Hủy
+                                  </button>
+                                )}
+                              </td>
                             </tr>
                           );
                         })

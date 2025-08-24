@@ -195,7 +195,7 @@ exports.getBookingHistory = async (req, res) => {
       ]
     });
 
-    // Đưa BranchName ra ngoài cho frontend dễ dùng
+    // Thêm trường canCancel: chỉ true nếu chưa hủy/thành công
     const result = bookings.map(b => ({
       BookingId: b.BookingId,
       BookingDate: b.BookingDate,
@@ -203,7 +203,8 @@ exports.getBookingHistory = async (req, res) => {
       TimeSlotId: b.TimeSlotId,
       Status: b.Status,
       BranchId: b.Court ? b.Court.BranchId : null,
-      BranchName: b.Court && b.Court.Branch ? b.Court.Branch.BranchName : null
+      BranchName: b.Court && b.Court.Branch ? b.Court.Branch.BranchName : null,
+      canCancel: b.Status !== "Đã hủy" && b.Status !== "Thành công"
     }));
 
     res.json({ bookings: result });
@@ -269,9 +270,27 @@ exports.approveBooking = async (req, res) => {
     const { id } = req.params;
     const booking = await Booking.findByPk(id);
     if (!booking) return res.status(404).json({ message: "Không tìm thấy booking" });
+    if (booking.Status === "User hủy sân" || booking.Status === "Đã hủy") {
+      return res.status(400).json({ message: "Không thể duyệt booking đã bị hủy!" });
+    }
     booking.Status = "Thành công";
     await booking.save();
     res.json({ message: "Duyệt sân thành công!", booking });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+exports.cancelManyBookings = async (req, res) => {
+  try {
+    const { bookingIds } = req.body;
+    if (!Array.isArray(bookingIds) || bookingIds.length === 0) {
+      return res.status(400).json({ message: "Danh sách bookingIds không hợp lệ" });
+    }
+    await Booking.update(
+      { Status: "User hủy sân" },
+      { where: { BookingId: bookingIds } }
+    );
+    res.json({ message: "User đã hủy tất cả các booking!" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

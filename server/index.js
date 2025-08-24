@@ -26,7 +26,7 @@ const productRoutes = require("./src/routes/productRoutes");
 const { getAllAccountsUser, getProfileUser, updateProfileUser, changePasswordUser,getOrderDetails,getOrderUser } = require("./src/app/controller/AccountUserController.js");
 const cartRoutes = require("./src/routes/cartRoutes");
 const checkoutRoutes = require('./src/routes/checkoutRoutes');
-const { getAllBranches, getCourtsByBranch, getAllTimeSlots,createBooking,getBookedSlots,getBookingHistory } = require("./src/app/controller/BookingController.js");
+const { getAllBranches, getCourtsByBranch, getAllTimeSlots,createBooking,getBookedSlots,getBookingHistory,cancelManyBookings } = require("./src/app/controller/BookingController.js");
 //Account routes
 app.get("/accountmanagementUser", authenticateJWT, authorize(["Người dùng"]), getAllAccountsUser);
 app.get('/profileUser', authenticateJWT, authorize(["Người dùng"]), getProfileUser);
@@ -48,11 +48,13 @@ app.get('/comments/:commentId/replies', getRepliesByComment); // <-- Đúng REST
 app.use("/cart", cartRoutes);
 app.use("/checkout", checkoutRoutes);
 //booking
-app.use("/branches", getAllBranches);
-app.use("/courts", getCourtsByBranch);
-app.use("/timeslots", getAllTimeSlots);
-app.use("/booked-slots", getBookedSlots);
-app.use("/booking-history", getBookingHistory);
+app.get("/branches", getAllBranches);
+app.get("/courts", getCourtsByBranch);
+app.get("/timeslots", getAllTimeSlots);
+app.get("/booked-slots", getBookedSlots);
+app.get("/booking-history", getBookingHistory);
+app.put("/booking/cancel-many", cancelManyBookings);
+
 app.post("/booking", authenticateJWT, authorize(["Người dùng"]), createBooking);
 //order
 app.get('/order', authenticateJWT, authorize(["Người dùng"]), getOrderUser);
