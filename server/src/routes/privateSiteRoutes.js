@@ -1,5 +1,5 @@
 const express = require("express");
-const { getAllAccounts, getProfileAdmin, updateProfileAdmin, changePassword,changeGroupAccount } = require("../app/controller/AccountController");
+const { getAllAccounts, getProfileAdmin, updateProfileAdmin, changePassword,changeGroupAccount,deleteAccount } = require("../app/controller/AccountController");
 const { getAllProducts, addProduct, deleteProduct, updateProduct,getProductById } = require("../app/controller/ProductController");
 const { getAllBrands, addBrand, deleteBrand, editBrand } = require("../app/controller/BrandController");
 const {getAllOrder,deleteOrder,getOrderById,changeStatusOrder} = require("../app/controller/OrderController")
@@ -19,6 +19,7 @@ router.get("/profile", authorize(["Quản trị"]), getProfileAdmin);
 router.put("/updateprofile", authorize(["Quản trị"]), updateProfileAdmin);
 router.put("/profile/changepassword", authorize(["Quản trị"]), changePassword);
 router.put("/accountmanagement/changegroupaccount/:id", authorize(["Quản trị"]), changeGroupAccount);
+router.delete("/accountmanagement/:id", authorize(["Quản trị"]), deleteAccount);
 
 // Sản phẩm
 router.get("/products",authorize(["Quản trị"]),getAllProducts);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
 
 const AccountManagement = () => {
   const token = localStorage.getItem("token");
@@ -15,7 +16,7 @@ const AccountManagement = () => {
         const response = await fetch("http://localhost:3000/privatesite/accountmanagement",{
           method: "GET",
           headers: {
-            Authorization: `Bearer ${token}`, // Thêm header Authorization
+            Authorization: `Bearer ${token}`,
           },
         });
         const data = await response.json();
@@ -27,6 +28,40 @@ const AccountManagement = () => {
 
     fetchAccounts();
   }, []); 
+
+  // Hàm xóa tài khoản với hiệu ứng xác nhận và thông báo
+  const handleDelete = async (accountId) => {
+    const result = await Swal.fire({
+      title: 'Bạn có chắc chắn muốn xóa tài khoản này không?',
+      text: "Hành động này không thể hoàn tác!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const response = await fetch(`http://localhost:3000/privatesite/accountmanagement/${accountId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setAccounts(accounts.filter(acc => acc.AccountId !== accountId));
+        Swal.fire("Thành công!", data.message || "Xóa tài khoản thành công!", "success");
+      } else {
+        Swal.fire("Lỗi", data.message || "Đã xảy ra lỗi khi xóa tài khoản.", "error");
+      }
+    } catch (error) {
+      Swal.fire("Lỗi", "Không thể kết nối tới máy chủ. Vui lòng thử lại sau.", "error");
+    }
+  };
 
   return (
     <div className="container-fluid">
@@ -83,7 +118,12 @@ const AccountManagement = () => {
                           state={{ account: acc }} className="btn btn-primary btn-sm">
                           Chi tiết
                         </Link>
-                        <button className="btn btn-danger btn-sm" >Xóa</button>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleDelete(acc.AccountId)}
+                        >
+                          Xóa
+                        </button>
                       </div>
                       </td>
                     </tr>

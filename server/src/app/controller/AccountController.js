@@ -119,6 +119,7 @@ exports.updateProfileAdmin = async (req, res) => {
                 firstname: user.Firstname,
                 lastname: user.Lastname,
                 gender: user.Gender,
+                IdGroup: user.IdGroup,
             },
             SECRET_KEY, // Sử dụng secret key từ môi trường hoặc cấu hình
             { expiresIn: '1h' } // Cấu hình thời gian hết hạn của token
@@ -177,6 +178,7 @@ exports.changePassword = async (req, res) => {
                 firstname: user.Firstname,
                 lastname: user.Lastname,
                 gender: user.Gender,
+                IdGroup: user.IdGroup,
             },
             SECRET_KEY, 
             { expiresIn: '7d' } 
@@ -203,16 +205,9 @@ exports.changeGroupAccount = async (req, res) => {
         const account = await Account.findOne({
             where: { AccountId: id },
         });
-
-
-
-
         if (!account) {
             return res.status(404).json({ message: "Tài khoản không tìm thấy." });
         }
-
-        // console.log("AccountId:", id, "Current:", account.IdGroup, "Change to:", groupId);
-
         if (account.IdGroup === 1) {
             if (account.IdGroup === groupId) {
                 return res.status(400).json({ message: "Tài khoản này hiện tại đang quyền quản trị" });
@@ -226,6 +221,26 @@ exports.changeGroupAccount = async (req, res) => {
         }
         await account.save();
         return res.json(account);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+exports.deleteAccount = async (req, res) => {
+    try {
+        const user = req.user;
+        if (!user || user.idgroup !== 1) {
+            return res.status(403).json({ message: "Chỉ quản trị viên mới được xóa tài khoản." });
+        }
+        const { id } = req.params;
+        const account = await Account.findOne({
+            where: { AccountId: id },
+        });
+        if (!account) {
+            return res.status(404).json({ message: "Tài khoản không tìm thấy." });
+        }
+
+        await account.destroy();
+        return res.json({ message: "Xóa tài khoản thành công!" });
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }

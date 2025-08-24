@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 
 const Category = () => {
   const token = localStorage.getItem("token");
@@ -44,9 +45,18 @@ const Category = () => {
   };
 
   const handleDelete = async (categoryId) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa thể loại này không?")) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: 'Bạn có chắc chắn muốn xóa thể loại này không?',
+      text: "Hành động này không thể hoàn tác!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       const response = await fetch(`http://localhost:3000/privatesite/categories/${categoryId}`, {
@@ -58,13 +68,12 @@ const Category = () => {
 
       if (response.ok) {
         setCategories(categories.filter((cat) => cat.CategoryId !== categoryId));
-        setMessage("Xóa thể loại thành công!");
+        Swal.fire("Thành công!", "Xóa thể loại thành công!", "success");
       } else {
-        setMessage("Đã xảy ra lỗi khi xóa thể loại.");
+        Swal.fire("Lỗi", "Đã xảy ra lỗi khi xóa thể loại.", "error");
       }
     } catch (error) {
-      console.error("Error deleting category:", error);
-      setMessage("Đã xảy ra lỗi khi xóa thể loại.");
+      Swal.fire("Lỗi", "Đã xảy ra lỗi khi xóa thể loại.", "error");
     }
   };
 

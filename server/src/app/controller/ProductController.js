@@ -78,7 +78,6 @@ exports.addProduct = async (req, res) => {
 
         try {
             const { ProductName, Description, SummaryDescription, Discount, IdBrand, Price, specifications, CategoryId } = req.body;
-            console.log('CategoryId backend nhận:', CategoryId, typeof CategoryId);
 
             // Ép kiểu và kiểm tra hợp lệ
             const categoryIdNumber = Number(CategoryId);
@@ -227,7 +226,6 @@ exports.updateProduct = async (req, res) => {
                 specifications
             } = req.body;
             const product = await Product.findByPk(id);
-            console.log(product)
             if (!product) {
                 return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
             }
@@ -432,7 +430,6 @@ exports.getImagesByProductId = async (req, res) => {
         const images = await Image.findAll({
             where: { ProductId: productId },
         });
-        console.log(images)
         if (images.length === 0) {
             return res.status(404).json({
                 message: 'Không có ảnh  nào cho sản phẩm .',

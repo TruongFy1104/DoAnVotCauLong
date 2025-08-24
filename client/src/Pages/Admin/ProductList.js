@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import Swal from 'sweetalert2';
 
 const ItemProduct = () => {
   const token = localStorage.getItem("token");
@@ -48,14 +49,22 @@ const ItemProduct = () => {
   );
 
   const handleDelete = async (ProductId) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: 'Bạn có chắc chắn muốn xóa sản phẩm này không?',
+      text: "Hành động này không thể hoàn tác!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
 
     const token = localStorage.getItem("token"); 
-
     if (!token) {
-      alert("Bạn chưa đăng nhập hoặc token không hợp lệ.");
+      Swal.fire("Lỗi", "Bạn chưa đăng nhập hoặc token không hợp lệ.", "error");
       return;
     }
 
@@ -69,15 +78,15 @@ const ItemProduct = () => {
 
       if (response.ok) {
         setProducts(products.filter((product) => product.ProductId !== ProductId));
-        alert("Xóa thành công!");
+        Swal.fire("Thành công!", "Xóa sản phẩm thành công!", "success");
       } else if (response.status === 403) {
-        alert("Bạn không có quyền xóa sản phẩm này.");
+        Swal.fire("Lỗi", "Bạn không có quyền xóa sản phẩm này.", "error");
       } else {
-        alert("Đã xảy ra lỗi khi xóa.");
+        Swal.fire("Lỗi", "Đã xảy ra lỗi khi xóa.", "error");
       }
     } catch (error) {
       console.error("Error deleting product:", error);
-      alert("Đã xảy ra lỗi khi xóa.");
+      Swal.fire("Lỗi", "Đã xảy ra lỗi khi xóa.", "error");
     }
   };
 

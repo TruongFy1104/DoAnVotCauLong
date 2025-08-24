@@ -74,7 +74,7 @@ export default function Checkout() {
     }));
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
       alert('Bạn cần đăng nhập để thanh toán.');
@@ -87,7 +87,6 @@ export default function Checkout() {
       return;
     }
 
-    // Kiểm tra thông tin khách hàng
     if (
       !userInfo.Address ||
       !userInfo.Mobile ||
@@ -96,6 +95,59 @@ export default function Checkout() {
       !userInfo.Lastname
     ) {
       alert('Vui lòng điền đầy đủ họ tên và email.');
+      return;
+    }
+
+    // Xử lý thanh toán VNPay
+    if (form.payment === "vnpay") {
+      const response = await fetch('http://localhost:3000/checkout/create-vnpay-payment-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: Math.round(total), // Đảm bảo là số nguyên
+          language: 'vn',
+          bankCode: '',
+          orderInfo: 'Thanh toán đơn hàng tại BadmintonShop'
+          // Không cần gửi returnUrl nếu backend đã cấu hình
+        }),
+      });
+      const data = await response.json();
+      if (data.paymentUrl) {
+        window.location.href = data.paymentUrl; // Redirect sang VNPay
+        return;
+      }
+      alert('Không thể tạo link thanh toán VNPay.');
+      return;
+    }
+
+    // Xử lý thanh toán MoMo
+    if (form.payment === "momo") {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3000/checkout/create-momo-payment-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token // Thêm dòng này để gửi token!
+        },
+        body: JSON.stringify({
+          amount: total,
+          orderInfo: 'Thanh toán đơn hàng tại BadmintonShop',
+          cart,
+          address: userInfo.Address,
+          mobile: userInfo.Mobile,
+          email: userInfo.Email,
+          firstname: userInfo.Firstname,
+          lastname: userInfo.Lastname,
+        }),
+      });
+      const data = await response.json();
+      if (data.payUrl) {
+        window.location.href = data.payUrl; // Redirect sang MoMo
+        return;
+      }
+      alert('Không thể tạo link thanh toán MoMo.');
       return;
     }
 
@@ -111,8 +163,8 @@ export default function Checkout() {
       body: JSON.stringify({
         cart, 
         paymentMethod: form.payment,
-        address: userInfo.Address, // Đúng chữ thường
-        mobile: userInfo.Mobile,   // Đúng chữ thường
+        address: userInfo.Address,
+        mobile: userInfo.Mobile,
         email: userInfo.Email,
         firstname: userInfo.Firstname,
         lastname: userInfo.Lastname,
@@ -238,7 +290,8 @@ export default function Checkout() {
             <label>Phương thức thanh toán</label>
             <select name="payment" value={form.payment} onChange={handleChange}>
               <option value="cod">Thanh toán khi nhận hàng</option>
-              <option value="bank">Chuyển khoản ngân hàng</option>
+              <option value="vnpay">Thanh toán qua VNPay</option>
+              <option value="momo">Thanh toán qua MoMo</option> {/* Thêm dòng này */}
             </select>
           </div>
           <button className="checkout-btn" onClick={handleCheckout}>THANH TOÁN</button>

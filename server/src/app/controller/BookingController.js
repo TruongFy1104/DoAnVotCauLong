@@ -126,7 +126,7 @@ exports.createBooking = async (req, res) => {
         CourtId: b.courtId,
         TimeSlotId: b.timeSlotId,
         BookingDate: b.bookingDate,
-        Status: 'Pending'
+        Status: 'Đang chờ duyệt'
       });
 
       createdBookings.push(newBooking);

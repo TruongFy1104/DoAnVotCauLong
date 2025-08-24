@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Link,useNavigate  } from "react-router-dom";
+import { useNavigate  } from "react-router-dom";
 import axios from "axios";
+import ReCAPTCHA from "react-google-recaptcha";
 import "./Login.css"
 const Login =()=>{
     const token = localStorage.getItem("token");
@@ -9,11 +10,16 @@ const Login =()=>{
     }
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [message, setMessage] = useState('');
+    const [ setMessage] = useState('');
     const [error, setError] = useState("");
+    const [recaptchaValue, setRecaptchaValue] = useState(null);
     const navigate = useNavigate(); // Hook dùng để chuyển hướng
     const handleSubmit = async (e) => {
       e.preventDefault();
+      if (!recaptchaValue) {
+        setError("Vui lòng xác nhận bạn không phải là người máy.");
+        return;
+      }
       try {
         // req
         const response = await axios.post(
@@ -68,6 +74,18 @@ const Login =()=>{
                 placeholder="Mật khẩu"
               />
             </div>
+           <div style={{ width: "100%", margin: "16px 0" }}>
+            <ReCAPTCHA
+              sitekey="6LfKqK4rAAAAAPOFsWIDc8s6hDXZUDr0pzFbplZG"
+              onChange={value => setRecaptchaValue(value)}
+              style={{ width: "100%" }}
+            />
+          </div>
+            {error && (
+              <div style={{ color: "red", marginBottom: 8, fontWeight: 500 }}>
+                {error}
+              </div>
+            )}
             <button type="submit" className="login-btn">
               Đăng nhập
             </button>

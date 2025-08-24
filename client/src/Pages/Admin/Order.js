@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from "react-router-dom";
+import  { useState, useEffect } from 'react';
+import { Link } from "react-router-dom";
+import Swal from 'sweetalert2';
 const { formatDate } = require('../Common');
+
 
 const Orders = () => {
   const token = localStorage.getItem("token");
@@ -47,6 +49,42 @@ const Orders = () => {
       order.OrderId.toString().includes(search)  // Tìm kiếm theo ID đơn hàng
     );
     setFilteredOrders(filtered);  // Cập nhật kết quả tìm kiếm
+  };
+
+  const handleDelete = async (orderId) => {
+    const result = await Swal.fire({
+      title: 'Bạn có chắc muốn xóa đơn hàng này?',
+      text: "Hành động này không thể hoàn tác!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const response = await fetch(`http://localhost:3000/privatesite/orders/delete/${orderId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setOrders(orders.filter(order => order.OrderId !== orderId));
+        setFilteredOrders(filteredOrders.filter(order => order.OrderId !== orderId));
+        Swal.fire('Thành công!', data.message || 'Xóa đơn hàng thành công!', 'success');
+      } else {
+        Swal.fire('Thất bại!', data.message || 'Đã xảy ra lỗi khi xóa đơn hàng.', 'error');
+      }
+    } catch (error) {
+      Swal.fire('Lỗi', 'Không thể kết nối tới máy chủ. Vui lòng thử lại sau.', 'error');
+    }
   };
 
   return (
@@ -129,6 +167,12 @@ const Orders = () => {
                             className="btn btn-primary btn-sm">
                             Chi tiết
                           </Link>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDelete(order.OrderId)}
+                          >
+                            Xóa
+                          </button>
                         </div>
                       </td>
                     </tr>

@@ -96,7 +96,19 @@ const BookingAdmin = () => {
 
   // Thêm hàm xử lý xóa booking
   const handleDelete = async (bookingId) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa đặt sân này?")) return;
+    const result = await Swal.fire({
+      title: 'Bạn có chắc muốn xóa đặt sân này?',
+      text: "Hành động này không thể hoàn tác!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
     const res = await fetch(`http://localhost:3000/privatesite/delete-booking/${bookingId}`, {
       method: "DELETE",
       headers: {

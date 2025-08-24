@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 
 const Brand = () => {
   const token = localStorage.getItem("token");
@@ -62,9 +63,18 @@ const Brand = () => {
   };
 
   const handleDelete = async (brandId) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa thương hiệu này không?")) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: 'Bạn có chắc chắn muốn xóa thương hiệu này không?',
+      text: "Hành động này không thể hoàn tác!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       const response = await fetch(`http://localhost:3000/privatesite/brands/${brandId}`, {
@@ -76,12 +86,12 @@ const Brand = () => {
 
       if (response.ok) {
         setBrands(brands.filter((brand) => brand.BrandId !== brandId));
-        setMessage("Xóa thương hiệu thành công!");
+        Swal.fire("Thành công!", "Xóa thương hiệu thành công!", "success");
       } else {
-        setMessage("Đã xảy ra lỗi khi xóa thương hiệu.");
+        Swal.fire("Lỗi", "Đã xảy ra lỗi khi xóa thương hiệu.", "error");
       }
     } catch (error) {
-      setMessage("Đã xảy ra lỗi khi xóa thương hiệu.");
+      Swal.fire("Lỗi", "Đã xảy ra lỗi khi xóa thương hiệu.", "error");
     }
   };
 
