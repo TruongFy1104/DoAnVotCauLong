@@ -664,3 +664,240 @@ exports.vnpayIpnHandler = async (req, res) => {
     return res.json({ RspCode: "99", Message: "Unknown error" });
   }
 };
+
+// ===== API CHO MOBILE =====
+
+// API tạo link thanh toán VNPay cho mobile (chỉ trả URL, không redirect)
+exports.createVNPayPaymentUrlMobile = async (req, res) => {
+  try {
+    // Auth
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(" ")[1];
+    if (!token)
+      return res.status(403).json({ message: "Token không được cung cấp" });
+
+    let user;
+    try {
+      user = jwt.verify(token, SECRET_KEY);
+    } catch {
+      return res.status(401).json({ message: "Token không hợp lệ" });
+    }
+
+    // Customer
+    const customer = await Customer.findOne({
+      where: { CustomerId: user.customerid },
+    });
+    if (!customer)
+      return res.status(404).json({ message: "Không tìm thấy khách hàng." });
+
+    // Input - cho mobile có thể đơn giản hơn
+    const {
+      amount,
+      orderInfo,
+      cart,
+      address,
+      mobile,
+      email,
+      firstname,
+      lastname,
+      orderId, // Có thể nhận orderId từ mobile nếu đã tạo order trước đó
+    } = req.body;
+
+    const amt = Number(amount);
+    if (!Number.isFinite(amt) || amt <= 0)
+      return res.status(400).json({ message: "amount không hợp lệ" });
+
+    let newOrder;
+
+    // Nếu mobile đã tạo order trước đó thì dùng orderId có sẵn
+    if (orderId) {
+      newOrder = await Order.findOne({ where: { OrderId: orderId } });
+      if (!newOrder) {
+        return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+      }
+    } else {
+      // Tạo order mới nếu chưa có
+      newOrder = await Order.create({
+        CustomerId: customer.CustomerId,
+        PaymentMethod: "vnpay",
+        Address: address || customer.Address,
+        Mobile: mobile || customer.Mobile,
+        Email: email || customer.Email,
+        Firstname: firstname || customer.Firstname,
+        Lastname: lastname || customer.Lastname,
+        TotalPrice: amt,
+        SubPrice: amt,
+        Discount: 0,
+        CreateAt: new Date(),
+        OrderStatusId: 3,
+        PaymentStatus: "Pending",
+      });
+
+      // Tạo OrderDetail nếu có cart và ProductId hợp lệ
+      if (Array.isArray(cart)) {
+        for (const item of cart) {
+          // Kiểm tra ProductId có tồn tại không (chỉ tạo nếu ProductId > 0 và có thực)
+          if (item.ProductId && item.ProductId > 1) {
+            try {
+              await OrderDetail.create({
+                OrderId: newOrder.OrderId,
+                ProductId: item.ProductId,
+                Quantity: item.Quantity,
+                Size: item.Size || null,
+              });
+            } catch (err) {
+              console.log(
+                `Không thể tạo OrderDetail cho ProductId ${item.ProductId}:`,
+                err.message
+              );
+              // Tiếp tục tạo order mà không fail
+            }
+          }
+        }
+      }
+    }
+
+    // Tạo URL thanh toán VNPay với return URL cho mobile
+    const vnp_TxnRef = String(newOrder.OrderId);
+    const mobileReturnUrl = `${
+      process.env.MOBILE_APP_SCHEME || "atbadminton"
+    }://payment-result`;
+
+    const vnp_Params = {
+      vnp_Version: "2.1.0",
+      vnp_Command: "pay",
+      vnp_TmnCode: vnp_TmnCode,
+      vnp_Locale: "vn",
+      vnp_CurrCode: "VND",
+      vnp_TxnRef: vnp_TxnRef,
+      vnp_OrderInfo: sanitizeOrderInfo(
+        orderInfo || `Thanh toan don hang mobile #${vnp_TxnRef}`
+      ),
+      vnp_OrderType: "other",
+      vnp_Amount: Math.round(amt) * 100,
+      vnp_ReturnUrl: mobileReturnUrl,
+      vnp_IpAddr: getClientIp(req),
+      vnp_CreateDate: formatVNDateYYYYMMDDHHmmss(),
+    };
+
+    // Ký & URL
+    const signData = buildSignData(vnp_Params);
+    const vnp_SecureHash = crypto
+      .createHmac("sha512", vnp_HashSecret)
+      .update(signData, "utf-8")
+      .digest("hex");
+
+    const paymentUrl = `${vnp_Url}?${buildQueryString({
+      ...vnp_Params,
+      vnp_SecureHashType: "HmacSHA512",
+      vnp_SecureHash,
+    })}`;
+
+    return res.json({
+      success: true,
+      paymentUrl,
+      orderId: newOrder.OrderId,
+      message: "Tạo link thanh toán thành công",
+    });
+  } catch (err) {
+    console.error("[VNPAY Mobile] create error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi tạo link thanh toán VNPay",
+      error: err.message,
+    });
+  }
+};
+
+// API cập nhật trạng thái thanh toán cho mobile
+exports.updatePaymentStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { paymentStatus } = req.body;
+
+    // Auth
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(" ")[1];
+    if (!token)
+      return res.status(403).json({ message: "Token không được cung cấp" });
+
+    let user;
+    try {
+      user = jwt.verify(token, SECRET_KEY);
+    } catch {
+      return res.status(401).json({ message: "Token không hợp lệ" });
+    }
+
+    // Validate input
+    if (!orderId || !paymentStatus) {
+      return res.status(400).json({
+        message: "orderId và paymentStatus là bắt buộc",
+      });
+    }
+
+    const validStatuses = ["Success", "Failed", "Pending", "Cancel"];
+    if (!validStatuses.includes(paymentStatus)) {
+      return res.status(400).json({
+        message:
+          "paymentStatus không hợp lệ. Chỉ chấp nhận: " +
+          validStatuses.join(", "),
+      });
+    }
+
+    // Tìm order và kiểm tra quyền
+    const order = await Order.findOne({
+      where: { OrderId: orderId },
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    }
+
+    // Kiểm tra order có thuộc về user hiện tại không
+    const customer = await Customer.findOne({
+      where: { CustomerId: user.customerid },
+    });
+
+    if (!customer || order.CustomerId !== customer.CustomerId) {
+      return res.status(403).json({
+        message: "Bạn không có quyền cập nhật đơn hàng này",
+      });
+    }
+
+    // Cập nhật trạng thái thanh toán
+    await Order.update(
+      { PaymentStatus: paymentStatus },
+      { where: { OrderId: orderId } }
+    );
+
+    // Lưu log transaction nếu cần
+    if (paymentStatus === "Success" || paymentStatus === "Failed") {
+      try {
+        await VnpayTransaction.create({
+          OrderId: orderId,
+          vnp_TxnRef: orderId.toString(),
+          vnp_Amount: order.TotalPrice,
+          vnp_ResponseCode: paymentStatus === "Success" ? "00" : "01",
+          Status: paymentStatus,
+        });
+      } catch (logErr) {
+        console.error("Error logging transaction:", logErr);
+        // Không fail request nếu log lỗi
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: `Cập nhật trạng thái thanh toán thành ${paymentStatus}`,
+      orderId: orderId,
+      paymentStatus: paymentStatus,
+    });
+  } catch (err) {
+    console.error("[Mobile] update payment status error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi cập nhật trạng thái thanh toán",
+      error: err.message,
+    });
+  }
+};
