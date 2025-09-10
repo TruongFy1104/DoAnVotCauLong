@@ -5,9 +5,10 @@ import '../models/branch_model.dart';
 import '../models/court_model.dart';
 import '../models/timeslot_model.dart';
 import '../models/booking_model.dart';
+import '../../core/constants/app_api.dart';
 
 class BookingService {
-  static const String baseUrl = 'http://10.0.2.2:3000';
+  static String get baseUrl => AppAPI.baseUrl;
 
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -65,7 +66,7 @@ class BookingService {
       print('📤 [BookingService] Headers: $headers');
 
       final response = await http.get(
-        Uri.parse('$baseUrl/branches'),
+        Uri.parse(AppAPI.branches),
         headers: headers,
       );
 
@@ -142,7 +143,7 @@ class BookingService {
       print('🔄 [BookingService] Calling getTimeSlots API...');
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/timeslots'),
+        Uri.parse(AppAPI.timeSlots),
         headers: headers,
       );
 

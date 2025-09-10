@@ -1,6 +1,6 @@
 class AppAPI {
   // Base URL - Sử dụng IP để mobile app có thể kết nối từ thiết bị thật
-  static const baseUrl = "http://192.168.0.202:3000";
+  static const baseUrl = "http://192.168.0.175:3000";
 
   // Auth
   static const login = '$baseUrl/auth/login';

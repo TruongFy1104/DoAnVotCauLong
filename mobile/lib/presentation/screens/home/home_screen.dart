@@ -1,4 +1,6 @@
 import 'widgets/banner_slider.dart';
+import 'widgets/home_section.dart';
+import 'widgets/features_slider.dart';
 import '../cart/cart_screen.dart';
 import '../cart/cart_state.dart';
 import 'package:flutter/material.dart';
@@ -113,6 +115,11 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 8),
               const BannerSlider(),
               const SizedBox(height: 16),
+
+              // Home Section with navigation
+              const HomeSection(),
+
+              const SizedBox(height: 16),
               const Text(
                 'Sản phẩm nổi bật',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -151,6 +158,9 @@ class HomeScreen extends StatelessWidget {
                   return const SizedBox.shrink();
                 },
               ),
+              const SizedBox(height: 24),
+              // Features Slider
+              const FeaturesSlider(),
             ],
           ),
         ),
