@@ -19,6 +19,7 @@ const DetailAccount = ({ onPasswordChange }) => {
             inputOptions: {
               1: 'Quản trị viên',
               2: 'Người dùng',
+              3: 'Nhân viên' 
             },
             inputPlaceholder: 'Chọn quyền',
             showCancelButton: true,

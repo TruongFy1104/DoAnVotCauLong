@@ -114,7 +114,6 @@ export default function HomePage() {
         <span className="section-divider-text">— QUẦN ÁO CẦU LÔNG —</span>
       </div>
       <ShoesGrid shoes={shoes} />
-      <NewsSection />
     </div>
   );
 }
@@ -498,26 +497,3 @@ function ShoesGrid({ shoes }) {
 }
 
 
-//TIN TỨC MỚI
-// Hiển thị danh sách tin tức mới
-function NewsSection() {
-  return (
-    <div className="news-section">
-      <h2 className="news-title">Tin tức mới</h2>
-      <div className="news-list">
-        {newsList.map((news) => (
-          <div className="news-card" key={news.id}>
-            <div className="news-img-wrap">
-              <img src={news.img} alt={news.title} />
-            </div>
-            <div className="news-content">
-              <div className="news-headline">{news.title}</div>
-              <div className="news-date">{news.date}</div>
-              <div className="news-desc">{news.desc}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}

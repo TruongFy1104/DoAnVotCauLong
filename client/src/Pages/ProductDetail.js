@@ -225,10 +225,7 @@ export default function ProductDetail() {
     }
   };
 
-  console.log("productDetails:", productDetails);
-  console.log("Category:", productDetails?.Category?.CategoryName);
-  console.log("ClothingSizes:", productDetails?.ClothingSizes);
-  console.log("ShoeSizes:", productDetails?.ShoeSizes);
+
 
   if (isLoading) return <div>Đang tải...</div>;
   if (error) return <div style={{ color: "red" }}>{error}</div>;

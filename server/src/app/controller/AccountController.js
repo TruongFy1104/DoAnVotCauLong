@@ -208,17 +208,21 @@ exports.changeGroupAccount = async (req, res) => {
         if (!account) {
             return res.status(404).json({ message: "Tài khoản không tìm thấy." });
         }
-        if (account.IdGroup === 1) {
-            if (account.IdGroup === groupId) {
-                return res.status(400).json({ message: "Tài khoản này hiện tại đang quyền quản trị" });
-            }
-            account.IdGroup = 2;
-        } else {
-            if (account.IdGroup === groupId) {
-                return res.status(400).json({ message: "Tài khoản này hiện tại đang quyền người dùng" });
-            }
-            account.IdGroup = 1;
+
+        // Nếu đã đúng quyền thì báo lỗi
+        if (account.IdGroup === groupId) {
+            let roleName = "người dùng";
+            if (groupId === 1) roleName = "quản trị";
+            if (groupId === 3) roleName = "nhân viên";
+            return res.status(400).json({ message: `Tài khoản này hiện tại đang quyền ${roleName}` });
         }
+
+        // Chỉ cho phép chuyển đổi giữa 3 nhóm quyền
+        if (![1, 2, 3].includes(groupId)) {
+            return res.status(400).json({ message: "Nhóm quyền không hợp lệ." });
+        }
+
+        account.IdGroup = groupId;
         await account.save();
         return res.json(account);
     } catch (error) {

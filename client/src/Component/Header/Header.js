@@ -199,9 +199,7 @@ const handleViewDetails = (productId) => {
               )}
             </div>
           </li>
-          <li><a href="#">Page</a></li>
           <li><Link to="/aboutus"><a href="#">About Us</a></Link></li>
-          <li><a href="#">Contact</a></li>
           <li><Link to="/booking"><a href="#">Đặt sân</a></Link></li>
 
         </ul>
@@ -281,30 +279,30 @@ const handleViewDetails = (productId) => {
               <span className="username">{username}</span>
               <FaChevronDown style={{ marginLeft: 4, fontSize: 13 }} />
               {userDropdownOpen && (
-                <div className="user-dropdown-menu">
-                  <ul>
-                    {idGroup === 2 ? (
-                      <>
-                        <li>
-                          <Link to="/UserProfile">Thông tin</Link>
-                        </li>
-                        <li>
-                          <a href="#" onClick={handleLogout}>Logout</a>
-                        </li>
-                      </>
-                    ) : (
-                      <>
-                        <li>
-                          <Link to="/Privatesite/Dashboard">Trang quản trị</Link>
-                        </li>
-                        <li>
-                          <a href="#" onClick={handleLogout}>Logout</a>
-                        </li>
-                      </>
-                    )}
-                  </ul>
-                </div>
-              )}
+              <div className="user-dropdown-menu">
+                <ul>
+                  {(idGroup === 1 || idGroup === 3) ? ( // Cho cả admin và nhân viên
+                    <>
+                      <li>
+                        <Link to="/Privatesite/Dashboard">Trang quản trị</Link>
+                      </li>
+                      <li>
+                        <a href="#" onClick={handleLogout}>Logout</a>
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li>
+                        <Link to="/UserProfile">Thông tin</Link>
+                      </li>
+                      <li>
+                        <a href="#" onClick={handleLogout}>Logout</a>
+                      </li>
+                    </>
+                  )}
+                </ul>
+              </div>
+            )}
             </div>
           )}
         </div>

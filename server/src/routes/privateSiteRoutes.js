@@ -35,13 +35,13 @@ router.delete("/brands/:id", authorize(["Quản trị"]), deleteBrand);
 router.put("/editbrand/:id", authorize(["Quản trị"]), editBrand);
 
 // Đơn hàng
-router.get("/orders", getAllOrder);
-router.put("/orders/changestatus/:id", changeStatusOrder);
-router.get("/orders/:id", getOrderById);
-router.delete("/orders/delete/:id", deleteOrder);
+router.get("/orders", authorize(["Quản trị", "Nhân viên"]), getAllOrder);
+router.put("/orders/changestatus/:id", authorize(["Quản trị", "Nhân viên"]), changeStatusOrder);
+router.get("/orders/:id", authorize(["Quản trị", "Nhân viên"]), getOrderById);
+router.delete("/orders/delete/:id", authorize(["Quản trị", "Nhân viên"]), deleteOrder);
 
 // Doanh thu
-router.get("/revenue", getRevenue);
+router.get("/revenue", authorize(["Quản trị"]), getRevenue);
 
 // Danh mục (category)
 router.get("/categories", getAllCategories);
@@ -65,10 +65,10 @@ router.post("/courts", authorize(["Quản trị"]), createCourt);
 router.delete("/courts/:id", authorize(["Quản trị"]), deleteCourt);
 router.put("/edit-courts/:id", editCourt);
 //Booking
-router.get("/all-bookings", authorize(["Quản trị"]), getAllBookings);
-router.put("/approve-booking/:id", authorize(["Quản trị"]), approveBooking);
-router.put("/cancel-booking/:id", authorize(["Quản trị"]), cancelBooking);
-router.delete("/delete-booking/:id", authorize(["Quản trị"]), deleteBooking);
+router.get("/all-bookings", authorize(["Quản trị", "Nhân viên"]), getAllBookings);
+router.put("/approve-booking/:id", authorize(["Quản trị", "Nhân viên"]), approveBooking);
+router.put("/cancel-booking/:id", authorize(["Quản trị", "Nhân viên"]), cancelBooking);
+router.delete("/delete-booking/:id", authorize(["Quản trị", "Nhân viên"]), deleteBooking);
 
 // Route thay đổi
 module.exports = router;

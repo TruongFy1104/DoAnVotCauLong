@@ -107,8 +107,14 @@ const AccountManagement = () => {
                         <p className="mb-0 fw-normal">{acc.Email}</p>
                       </td>
                       <td className="border-bottom-0 text-center">
-                        <p className="mb-0 fw-normal">{acc.IdGroup == 1 ? 'Quản trị' : 'Người dùng'}</p>
-                      </td>
+                        <p className="mb-0 fw-normal">
+                          {acc.IdGroup == 1
+                            ? 'Quản trị'
+                            : acc.IdGroup == 3
+                            ? 'Nhân viên'
+                            : 'Người dùng'}
+                        </p>                     
+                         </td>
                       <td className="border-bottom-0 text-center">
                         <p className="mb-0 fw-normal">{acc.CustomerId}</p>
                       </td>

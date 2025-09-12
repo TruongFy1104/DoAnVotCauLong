@@ -15,7 +15,7 @@ const UserProfile = ({ onPasswordChange }) => {
   const [tab, setTab] = useState("info");
   const [orders, setOrders] = useState([]);
   const [bookings, setBookings] = useState([]);
-
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const fetchUserData = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -103,6 +103,10 @@ const UserProfile = ({ onPasswordChange }) => {
   };
 
   const handlePasswordChange = async () => {
+     if (newPassword !== confirmNewPassword) {
+    Swal.fire('Lỗi', 'Mật khẩu mới và xác nhận mật khẩu không khớp.', 'error');
+    return;
+  }
     const data = {
       oldPassword: currentPassword,
       newPassword: newPassword,
@@ -339,6 +343,15 @@ const UserProfile = ({ onPasswordChange }) => {
                   <div className="profile-field">
                     <label>Mật khẩu mới</label>
                     <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="profile-input" />
+                  </div>
+                  <div className="profile-field">
+                    <label>Xác nhận mật khẩu mới</label>
+                    <input
+                      type="password"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      className="profile-input"
+                    />
                   </div>
                   <button type="button" className="profile-save-btn" onClick={handlePasswordChange}>LƯU</button>
                 </form>

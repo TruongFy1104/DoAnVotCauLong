@@ -31,7 +31,7 @@ const AdminLayout = () => {
 
   useEffect(() => {
     // Kiểm tra quyền truy cập của người dùng
-    // Nếu không có token hoặc không phải là admin, chuyển hướng đến trang notfound
+    // Nếu không có token hoặc không phải là admin hoặc nhân viên, chuyển hướng đến trang notfound
     const token = localStorage.getItem("token");
     let idGroup = null;
     if (token) {
@@ -42,8 +42,8 @@ const AdminLayout = () => {
         idGroup = null;
       }
     }
-    //trang notfound
-    if (!token || idGroup !== 1) {
+    // Chỉ cho phép admin (1) hoặc nhân viên (3)
+    if (!token || (idGroup !== 1 && idGroup !== 3)) {
       navigate("/notfound");
     }
   }, [navigate]);
