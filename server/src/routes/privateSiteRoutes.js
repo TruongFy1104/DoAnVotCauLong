@@ -41,7 +41,7 @@ router.get("/orders/:id", authorize(["Quản trị", "Nhân viên"]), getOrderBy
 router.delete("/orders/delete/:id", authorize(["Quản trị", "Nhân viên"]), deleteOrder);
 
 // Doanh thu
-router.get("/revenue", authorize(["Quản trị"]), getRevenue);
+router.get("/revenue", getRevenue);
 
 // Danh mục (category)
 router.get("/categories", getAllCategories);
