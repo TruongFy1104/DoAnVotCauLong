@@ -3,7 +3,7 @@ import React from 'react';
 const Dashboard = () => {
   const token = localStorage.getItem("token");
   if (!token) {
-    window.location.href = '/auth/login';
+    window.location.href = '/Login';
     throw new Error("Token không tồn tại. Hãy đăng nhập lại.");
   }
 
