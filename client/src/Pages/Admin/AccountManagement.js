@@ -51,12 +51,17 @@ const AccountManagement = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      const data = await response.json();
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (e) {
+        data = { message: "Lỗi không xác định từ server." };
+      }
       if (response.ok) {
         setAccounts(accounts.filter(acc => acc.AccountId !== accountId));
         Swal.fire("Thành công!", data.message || "Xóa tài khoản thành công!", "success");
       } else {
-        Swal.fire("Lỗi", data.message || "Đã xảy ra lỗi khi xóa tài khoản.", "error");
+        Swal.fire("Lỗi", data.message || `Đã xảy ra lỗi khi xóa tài khoản (mã lỗi: ${response.status})`, "error");
       }
     } catch (error) {
       Swal.fire("Lỗi", "Không thể kết nối tới máy chủ. Vui lòng thử lại sau.", "error");
