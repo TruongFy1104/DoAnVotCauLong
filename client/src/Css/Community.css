@@ -1,0 +1,1858 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.community-container {
+  background: #f0f2f5;
+  min-height: 100vh;
+  padding: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.community-title {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 700;
+  color: #7098ee;
+  margin-bottom: 24px;
+}
+
+.community-layout {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  gap: 24px;
+}
+
+/* ===== SIDEBAR (LEFT) ===== */
+.community-sidebar {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  height: fit-content;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: sticky;
+  top: 20px;
+}
+
+.sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.search-box {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f9fafb;
+}
+
+.search-icon {
+  color: #9ca3af;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+.user-list {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.user-item:hover {
+  background: #f9fafb;
+}
+
+/* Nhân viên - Làm nổi bật */
+.user-item.staff-user {
+  background: linear-gradient(90deg, #fef3c7 0%, #ffffff 100%);
+  border-left: 3px solid #f59e0b;
+}
+
+.user-item.staff-user:hover {
+  background: linear-gradient(90deg, #fde68a 0%, #fef3c7 100%);
+}
+
+.user-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+
+/* Badge nhân viên trên avatar */
+.staff-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  background: #f59e0b;
+  color: white;
+  border: 2px solid white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.online-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background: #10b981;
+  border: 2px solid white;
+  border-radius: 50%;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 14px;
+  margin: 0;
+  color: #1f2937;
+}
+
+/* Label nhân viên */
+.staff-label {
+  background: #f59e0b;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-status {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 4px 0 0 0;
+}
+
+.no-results {
+  text-align: center;
+  padding: 24px 16px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+/* ===== FEED (CENTER) ===== */
+.community-feed {
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* === Tìm kiếm bài viết === */
+.post-filter-box {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.post-filter-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.post-search-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.post-search-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.post-filter-select {
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  outline: none;
+  min-width: 160px;
+  transition: all 0.2s;
+  font-weight: 500;
+  color: #374151;
+}
+
+.post-filter-select:hover {
+  border-color: #2563eb;
+}
+
+.post-filter-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.post-filter-info {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.post-filter-info strong {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.clear-filter-btn {
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.clear-filter-btn:hover {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+.create-post-box {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%; /* Full chiều rộng */
+}
+
+/* Input nhập nội dung */
+.create-post-input {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  background: #f9fafb;
+}
+
+.create-post-input:focus {
+  border-color: #2563eb;
+  background: white;
+}
+
+/* Hành động (nút chọn ảnh/video và nút đăng) */
+.create-post-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.action-btn-secondary {
+  flex: 1;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.2s;
+}
+
+.action-btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.post-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.post-btn:hover {
+  background: #1d4ed8;
+}
+
+.post-btn:active {
+  transform: scale(0.98);
+}
+
+/* Hiển thị hình ảnh đã chọn */
+.preview-image {
+  position: relative;
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-image img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 5px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.remove-image-btn:hover {
+  background-color: darkred;
+}
+
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.post-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+
+  transition: all 0.2s;
+}
+
+.post-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.post-header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.post-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e5e7eb;
+  flex-shrink: 0;
+}
+
+.post-author-info {
+  flex: 1;
+}
+
+.post-author-name {
+  font-weight: 600;
+  font-size: 14px;
+  margin: 0;
+  color: #1f2937;
+}
+
+.post-time {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 4px 0 0 0;
+}
+
+.post-content {
+  margin: 12px 0;
+  line-height: 1.5;
+  font-size: 14px;
+    word-break: break-word;
+  white-space: pre-line;
+  color: #374151;
+}
+
+.post-image {
+  width: 100%; /* Chiều rộng đầy đủ của khung bài đăng */
+  height: auto; /* Tự động điều chỉnh chiều cao theo tỷ lệ */
+  object-fit: contain; /* Hiển thị toàn bộ hình ảnh mà không bị cắt */
+  border-radius: 8px; /* Bo góc hình ảnh */
+  margin-top: 10px; /* Khoảng cách giữa hình ảnh và nội dung phía trên */
+}
+.post-stats {
+  display: flex;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+.post-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.action-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.action-btn.liked {
+  color: #2563eb;
+}
+
+.action-btn.liked:hover {
+  background: #eff6ff;
+}
+
+.comments-section {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.comment {
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.comment:last-child {
+  margin-bottom: 0;
+}
+
+.comment-author {
+  font-weight: 600;
+  margin: 0;
+  color: #1f2937;
+}
+
+.comment-text {
+  color: #374151;
+  margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+
+/* ===== COMMENT INPUT SECTION ===== */
+.comment-input-section {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.comment-input-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.comment-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.comment-input:focus {
+  border-color: #7098ee;
+  box-shadow: 0 0 0 3px rgba(112, 152, 238, 0.1);
+}
+
+.comment-send-btn {
+  padding: 8px 12px;
+  background: #7098ee;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.comment-send-btn:hover {
+  background: #5a7ddb;
+  transform: scale(1.05);
+}
+
+.comment-send-btn:active {
+  transform: scale(0.95);
+}
+
+/* ===== CHAT BOX (RIGHT) ===== */
+.chat-box-container {
+  position: fixed;
+  bottom: 80px;  /* Tăng từ 20px lên 80px để lên cao hơn */
+  right: 20px;
+  width: 300px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  max-height: 500px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.chat-header {
+  background: linear-gradient(20deg, #5f9bd8 100%, #d9dde2 0%);
+  color: white;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chat-header-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.chat-user-name {
+  font-weight: 600;
+  font-size: 14px;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-status {
+  font-size: 11px;
+  opacity: 0.9;
+  margin: 2px 0 0 0;
+  white-space: nowrap;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  opacity: 0.8;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.message {
+  display: flex;
+  flex-direction: column; /* Sắp xếp nội dung theo chiều dọc */
+  max-width: 70%; /* Giới hạn chiều rộng tin nhắn */
+  margin: 10px 0;
+}
+
+.message.sent {
+  align-self: flex-end; /* Tin nhắn của người gửi nằm bên phải */
+}
+
+.message.received {
+  align-self: flex-start; /* Tin nhắn của người nhận nằm bên trái */
+}
+
+/* Khung chứa text */
+.message-bubble {
+  background-color: #007bff; /* Màu xanh cho tin nhắn gửi */
+  color: white;
+  padding: 10px;
+  border-radius: 12px;
+  word-wrap: break-word; /* Đảm bảo text không bị tràn */
+  font-size: 14px; /* Kích thước chữ */
+  line-height: 1.5; /* Khoảng cách giữa các dòng */
+}
+
+.message.received .message-bubble {
+  background-color: #f1f1f1; /* Màu xám cho tin nhắn nhận */
+  color: black;
+}
+
+/* Hình ảnh */
+.message-image {
+  max-width: 100%; /* Hình ảnh chiếm toàn bộ chiều rộng tin nhắn */
+  border-radius: 10px; /* Bo góc hình ảnh */
+  margin-top: 5px; /* Tạo khoảng cách giữa text và hình ảnh */
+  object-fit: contain; /* Hiển thị toàn bộ hình ảnh mà không bị cắt */
+  border: none; /* Xóa viền xung quanh hình ảnh */
+}
+
+/* Nội dung tin nhắn (text) */
+.message-bubble {
+  margin-bottom: 10px; /* Tạo khoảng cách giữa text và hình ảnh */
+  word-wrap: break-word; /* Đảm bảo text không bị tràn */
+  font-size: 14px; /* Kích thước chữ */
+  line-height: 1.5; /* Khoảng cách giữa các dòng */
+}
+
+/* Hình ảnh trong tin nhắn */
+.message-image {
+  max-width: 100%; /* Hình ảnh chiếm toàn bộ chiều rộng tin nhắn */
+  border-radius: 0; /* Xóa bo góc hình ảnh */
+  margin: 0; /* Xóa khoảng cách giữa hình ảnh và các phần khác */
+  object-fit: contain; /* Hiển thị toàn bộ hình ảnh mà không bị cắt */
+  background: black; /* Xóa nền hoặc khung màu */
+  border: none; /* Xóa viền xung quanh hình ảnh */
+}
+
+/* Thời gian tin nhắn */
+.message-time {
+  font-size: 12px; /* Kích thước chữ nhỏ hơn */
+  color: rgba(16, 16, 16, 0.8); /* Màu chữ nhạt hơn */
+  text-align: right; /* Căn thời gian sang phải */
+  margin-top: 5px; /* Tạo khoảng cách giữa hình ảnh và thời gian */
+}
+.message.received .message-time {
+  color: rgba(0, 0, 0, 0.6); /* Màu chữ nhạt hơn cho tin nhắn nhận */
+}
+
+.chat-input-box {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+}
+
+.chat-input {
+  flex: 1;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 8px 12px;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+}
+
+.chat-input:focus {
+  border-color: #2563eb;
+}
+
+.send-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.send-btn:hover {
+  background: #1d4ed8;
+}
+
+.send-btn:active {
+  transform: scale(0.95);
+}
+
+/* ===== SCROLLBAR STYLING ===== */
+.user-list::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.user-list::-webkit-scrollbar-track,
+.chat-messages::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+.user-list::-webkit-scrollbar-thumb,
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.user-list::-webkit-scrollbar-thumb:hover,
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .community-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .community-sidebar {
+    display: none;
+  }
+
+  .chat-box-container {
+    position: static;
+    max-height: 400px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .community-title {
+    font-size: 24px;
+  }
+
+  .community-feed {
+    max-width: 100%;
+  }
+
+  .chat-box-container {
+    width: calc(100% - 16px);
+    right: 8px;
+    bottom: 8px;
+  }
+}
+/* Nút 3 chấm */
+.options-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #555;
+  margin-left: auto;
+  position: relative; /* Đảm bảo nút là vị trí tham chiếu */
+}
+
+.options-btn:hover {
+  color: #000;
+}
+
+/* Menu tùy chọn */
+.options-menu {
+  position: absolute;
+  top: 100%; /* Hiển thị ngay dưới nút 3 chấm */
+  right: 0; /* Căn chỉnh menu với nút */
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  width: 150px; /* Đặt chiều rộng menu */
+}
+
+.options-menu button {
+  background: none;
+  border: none;
+  padding: 10px 15px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+}
+
+.options-menu button:hover {
+  background: #f5f5f5;
+  color: #000;
+}
+/* Nút X để xóa bài đăng */
+.delete-post-btn {
+  background: none;
+  border: none;
+  color:black;
+  font-size: 20px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.delete-post-btn:hover {
+  color:black;
+    color: rgba(17, 161, 234, 0.43);
+
+}
+/* Khung bình luận */
+.comments-section {
+  margin-top: 18px;
+  padding: 12px 16px;
+  background: #f7f7fa;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.comment {
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ececec;
+}
+
+.comment:last-child {
+  border-bottom: none;
+}
+
+.comment-author {
+  font-weight: 600;
+  color: #2d3a4a;
+  margin-bottom: 2px;
+  font-size: 1em;
+}
+
+.comment-text {
+  margin: 2px 0 6px 0;
+  color: #444;
+  font-size: 0.98em;
+}
+
+.reply-btn {
+  background: none;
+  border: none;
+  color: #1976d2;
+  cursor: pointer;
+  font-size: 0.95em;
+  padding: 0 6px;
+  margin-left: 2px;
+  transition: color 0.2s;
+}
+
+.reply-btn:hover {
+  color: #0d47a1;
+  text-decoration: underline;
+}
+
+/* Khung nhập bình luận */
+.comment-input-section {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.comment-input-box {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.comment-input {
+  flex: 1;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid #d0d0d0;
+  font-size: 1em;
+  outline: none;
+  margin-right: 8px;
+  background: #fff;
+  transition: border 0.2s;
+}
+
+.comment-input:focus {
+  border: 1.5px solid #1976d2;
+}
+
+.comment-send-btn {
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 1.1em;
+}
+
+.comment-send-btn:hover {
+  background: #1251a3;
+}
+
+/* Khung reply */
+.replies-section {
+  margin-left: 32px;
+  margin-top: 6px;
+}
+
+.reply {
+  background: #eef3fa;
+  border-radius: 10px;
+  padding: 7px 12px;
+  margin-bottom: 6px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.reply-author {
+  font-weight: 500;
+  color: #1976d2;
+  font-size: 0.97em;
+  margin-bottom: 2px;
+}
+
+.reply-text {
+  color: #333;
+  font-size: 0.96em;
+  margin-bottom: 0;
+}
+
+/* Khung nhập reply */
+.reply-input-section {
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+  margin-left: 18px;
+}
+
+.reply-input {
+  flex: 1;
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1px solid #d0d0d0;
+  font-size: 0.97em;
+  outline: none;
+  margin-right: 6px;
+  background: #fff;
+  transition: border 0.2s;
+}
+
+.reply-input:focus {
+  border: 1.5px solid #1976d2;
+}
+
+.reply-send-btn {
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 1em;
+}
+
+.reply-send-btn:hover {
+  background: #1251a3;
+}
+/* Modal overlay */
+.comment-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.25);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modal box */
+.comment-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 480px;
+  max-width: 98vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.comment-modal-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid #eee;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  color: #888;
+  cursor: pointer;
+}
+
+.comment-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 20px 8px 20px;
+}
+
+.comments-list .comment {
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.comment-author {
+  font-weight: 600;
+  color: #1976d2;
+  margin-bottom: 2px;
+}
+
+.comment-text {
+  margin-bottom: 6px;
+  color: #222;
+}
+
+.reply-btn {
+  background: none;
+  border: none;
+  color: #1976d2;
+  cursor: pointer;
+  font-size: 0.95em;
+  margin-left: 0;
+  margin-bottom: 4px;
+}
+
+.reply-input-section {
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+  margin-left: 12px;
+}
+
+.reply-input {
+  flex: 1;
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1px solid #d0d0d0;
+  font-size: 0.97em;
+  outline: none;
+  margin-right: 6px;
+  background: #fff;
+}
+
+.reply-send-btn {
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+.replies-section {
+  margin-left: 24px;
+  margin-top: 4px;
+}
+
+.reply {
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 5px 10px;
+  margin-bottom: 4px;
+}
+
+.reply-author {
+  font-weight: 500;
+  color: #1976d2;
+  font-size: 0.97em;
+  margin-bottom: 2px;
+}
+
+.reply-text {
+  color: #333;
+  font-size: 0.96em;
+}
+
+.comment-modal-footer {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  border-top: 1px solid #eee;
+  background: #fafbfc;
+}
+
+.comment-input {
+  flex: 1;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid #d0d0d0;
+  font-size: 1em;
+  outline: none;
+  background: #fff;
+  margin-right: 8px;
+}
+
+.comment-send-btn {
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1em;
+}
+.post-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 12px;
+}
+
+.comment-count {
+  font-size: 14px;
+  color: #2563eb;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.comment-count:hover {
+  color: #1d4ed8;
+}
+.selected-image-preview {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.preview-image {
+  max-width: 100px;
+  max-height: 100px;
+  margin-right: 10px;
+  border-radius: 5px;
+}
+
+.remove-image-btn {
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.remove-image-btn:hover {
+  background-color: darkred;
+}
+
+/* Modal hiển thị hình ảnh */
+.image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8); /* Nền tối */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-image {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 10px;
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.close-modal-btn:hover {
+  background-color: darkred;
+}
+
+.prev-image-btn,
+.next-image-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: white;
+  color: black;
+  border: none;
+  padding: 10px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.prev-image-btn {
+  left: 20px;
+}
+
+.next-image-btn {
+  right: 20px;
+}
+
+.prev-image-btn:disabled,
+.next-image-btn:disabled {
+  background-color: gray;
+  cursor: not-allowed;
+}
+/* Bố cục dạng hàng ngang */
+.post-images.row-layout {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.post-images.row-layout .post-image {
+  width: calc(100% / 4 - 10px); /* Chia đều hình ảnh */
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Bố cục dạng lưới */
+.post-images.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Hiển thị 2 cột */
+  gap: 10px;
+}
+
+.post-images.grid-layout .post-image {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Hiển thị số lượng hình ảnh còn lại */
+.post-images .more-images {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 8px;
+  width: 100%;
+  height: auto;
+}
+
+/* Hiển thị full size nếu chỉ có 1 ảnh */
+.post-images .single-image {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Bố cục dạng lưới nếu có nhiều ảnh */
+.post-images .grid-layout {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Hiển thị 2 cột */
+  gap: 10px;
+}
+
+.post-images .grid-layout.limit-layout {
+  grid-template-columns: repeat(3, 1fr); /* Hiển thị 3 cột nếu có nhiều ảnh */
+}
+
+.post-images .grid-image {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Hiển thị số lượng hình ảnh còn lại */
+.post-images .more-images {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 8px;
+  width: 100%;
+  height: auto;
+}
+/* Nút chỉnh sửa */
+.edit-post-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: #007bff;
+  margin-left: auto;
+}
+
+.edit-post-btn:hover {
+  color: #0056b3;
+}
+
+/* Edit post */
+.edit-post {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.edit-post textarea {
+  width: 100%;
+  height: 100px;
+  resize: none;
+}
+
+.edit-post input[type="file"] {
+  margin-top: 10px;
+}
+
+.edit-post button {
+  padding: 10px;
+  border: none;
+  cursor: pointer;
+  background-color: #007bff;
+  color: white;
+  border-radius: 5px;
+}
+
+.edit-post button:hover {
+  background-color: #0056b3;
+}
+
+/* Edit images */
+.edit-images {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.edit-image-item {
+  position: relative;
+}
+
+.edit-image {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.delete-image-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 5px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.delete-image-btn:hover {
+  background-color: darkred;
+}
+
+/* ===== MODERN CHAT BOX STYLES ===== */
+.chat-box-modern {
+  position: fixed;
+  bottom: 0;
+  right: 80px;
+  width: 380px;
+  height: 550px;
+  background: white;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.chat-header-modern {
+  padding: 16px 20px;
+  background: linear-gradient(20deg, #5f9bd8 0%, #d9dde2 100%);
+  color: white;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chat-avatar-modern {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+}
+
+.close-btn-modern {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.close-btn-modern:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.chat-messages-modern {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background: #f8f9fa;
+  background-image: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.message-wrapper {
+  display: flex;
+  margin-bottom: 16px;
+  gap: 8px;
+}
+
+.message-wrapper.message-sent {
+  justify-content: flex-end;
+}
+
+.message-wrapper.message-received {
+  justify-content: flex-start;
+}
+
+.message-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.message-content-wrapper {
+  max-width: 65%;
+}
+
+.sender-name {
+  margin-bottom: 4px;
+}
+
+.sender-name small {
+  font-size: 11px;
+}
+
+.message-bubble-modern {
+  border-radius: 18px;
+  word-wrap: break-word;
+  display: inline-block;
+}
+
+.message-bubble-modern.sent {
+  border-radius: 18px 18px 4px 18px;
+}
+
+.message-bubble-modern.received {
+  background: white;
+  color: #1f2937;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px 18px 18px 4px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.bubble-text {
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 4px;
+  background: linear-gradient(20deg, #5f9bd8 0%, #d9dde2 100%);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 18px 18px 4px 18px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.message-bubble-modern.received .bubble-text {
+  background: none;
+  color: #1f2937;
+  padding: 0;
+  box-shadow: none;
+}
+
+.message-image-modern {
+  max-width: 250px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: block;
+  transition: transform 0.2s;
+}
+
+.message-image-modern:hover {
+  transform: scale(1.02);
+}
+
+.message-time-modern {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-top: 4px;
+  padding-left: 4px;
+}
+
+.image-preview-container {
+  padding: 12px 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.image-preview {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+}
+
+.remove-preview-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.remove-preview-btn:hover {
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+.chat-input-modern {
+  padding: 16px 20px;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.message-input-modern {
+  flex: 1;
+  border: none;
+  background: #f3f4f6;
+  padding: 12px 16px;
+  border-radius: 24px;
+  outline: none;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.message-input-modern:focus {
+  background: #e5e7eb;
+}
+
+.file-btn-modern,
+.send-btn-modern {
+  background: linear-gradient(20deg, #5f9bd8 100%, #d9dde2 0%);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.file-btn-modern:hover,
+.send-btn-modern:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.send-btn-modern:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.image-modal-modern {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-image-modern {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.close-modal-btn-modern {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.close-modal-btn-modern:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.prev-image-btn-modern,
+.next-image-btn-modern {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 24px;
+  transition: all 0.2s;
+}
+
+.prev-image-btn-modern {
+  left: 20px;
+}
+
+.next-image-btn-modern {
+  right: 20px;
+}
+
+.prev-image-btn-modern:hover,
+.next-image-btn-modern:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.prev-image-btn-modern:disabled,
+.next-image-btn-modern:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ===== UNREAD BADGE & MESSAGE PREVIEW ===== */
+.unread-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  min-width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.last-message-preview {
+  font-size: 13px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+  flex: 1;
+}
+
+.message-time-small {
+  font-size: 11px;
+  color: #9ca3af;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.staff-label-inline {
+  display: inline-block;
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 6px;
+  font-weight: 600;
+}

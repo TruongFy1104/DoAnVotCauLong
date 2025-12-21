@@ -31,6 +31,19 @@ const Booking = sequelize.define('Booking', {
     type: DataTypes.STRING,
     defaultValue: 'Pending',
   },
+  TotalPrice: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+    defaultValue: 70000,
+  },
+  CancelReason: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  CancelNote: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
 }, {
   tableName: 'booking',
   timestamps: false,

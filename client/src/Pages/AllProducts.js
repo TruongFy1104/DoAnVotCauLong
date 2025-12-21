@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import Swal from 'sweetalert2';
 import "../Css/Style.css";
 
 function useQuery() {
@@ -110,7 +111,6 @@ const AllProducts = () => {
     setPriceFilters({});
   };
 
-  // Refs and hover handlers for cart button animation
   const cartRefs = useRef([]);
   const handleCartHover = idx => {
     const el = cartRefs.current[idx];
@@ -123,6 +123,141 @@ const AllProducts = () => {
     if (!el) return;
     el.style.transform = "";
   };
+
+  // Hàm thêm vào giỏ hàng
+  const handleAddToCart = async (product) => {
+    try {
+      // Fetch product details to check sizes
+      const response = await fetch(`http://localhost:3000/products/productdetails/${product.ProductId}`);
+      const data = await response.json();
+      
+      const clothingSizes = data.ClothingSizes || [];
+      const shoeSizes = data.ShoeSizes || [];
+      const hasSizes = clothingSizes.length > 0 || shoeSizes.length > 0;
+      
+      if (hasSizes) {
+        // Có size - hiển thị modal để chọn
+        // Extract size values from objects
+        const clothingSizeValues = clothingSizes.map(s => s.Size || s.size || s);
+        const shoeSizeValues = shoeSizes.map(s => s.Size || s.size || s);
+        const sizeOptions = [...clothingSizeValues, ...shoeSizeValues];
+        
+        const { value: selectedSize } = await Swal.fire({
+          title: 'Chọn size',
+          html: `
+            <div style="text-align: left; padding: 10px;">
+              <p style="margin-bottom: 15px; font-weight: 600;">${product.ProductName}</p>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                ${sizeOptions.map(size => `
+                  <button class="size-option-btn" data-size="${size}" style="
+                    padding: 12px;
+                    border: 2px solid #e5e7eb;
+                    border-radius: 8px;
+                    background: white;
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: all 0.2s;
+                  ">
+                    ${size}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          `,
+          showCancelButton: true,
+          confirmButtonText: 'Thêm vào giỏ',
+          cancelButtonText: 'Hủy',
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          didOpen: () => {
+            const buttons = document.querySelectorAll('.size-option-btn');
+            let selectedBtn = null;
+            buttons.forEach(btn => {
+              btn.addEventListener('click', () => {
+                if (selectedBtn) {
+                  selectedBtn.style.border = '2px solid #e5e7eb';
+                  selectedBtn.style.background = 'white';
+                  selectedBtn.style.color = 'black';
+                }
+                btn.style.border = '2px solid #3085d6';
+                btn.style.background = '#3085d6';
+                btn.style.color = 'white';
+                selectedBtn = btn;
+              });
+            });
+          },
+          preConfirm: () => {
+            const selectedBtn = document.querySelector('.size-option-btn[style*="rgb(48, 133, 214)"]');
+            if (!selectedBtn) {
+              Swal.showValidationMessage('Vui lòng chọn size!');
+              return false;
+            }
+            return selectedBtn.getAttribute('data-size');
+          }
+        });
+
+        if (selectedSize) {
+          addToCartWithSize(product, selectedSize);
+        }
+      } else {
+        // Không có size - thêm trực tiếp
+        addToCartWithSize(product, null);
+      }
+    } catch (error) {
+      console.error('Error fetching product details:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Không thể tải thông tin sản phẩm. Vui lòng thử lại!',
+        confirmButtonColor: '#d33'
+      });
+    }
+  };
+
+  const addToCartWithSize = (product, size) => {
+    try {
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      const cartItem = {
+        Avatar: product.Avatar,
+        ProductId: product.ProductId,
+        ProductName: product.ProductName,
+        Price: product.Price,
+        Quantity: 1,
+        Size: size
+      };
+
+      const existingProductIndex = cart.findIndex(
+        item => item.ProductId === cartItem.ProductId && item.Size === cartItem.Size
+      );
+
+      if (existingProductIndex !== -1) {
+        cart[existingProductIndex].Quantity += 1;
+      } else {
+        cart.push(cartItem);
+      }
+
+      localStorage.setItem('cart', JSON.stringify(cart));
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: 'Sản phẩm đã được thêm vào giỏ hàng!',
+        showConfirmButton: false,
+        timer: 1500
+      });
+
+      window.dispatchEvent(new Event("storage"));
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.',
+        confirmButtonColor: '#d33'
+      });
+    }
+  };
+
 
   return (
     <div style={{ background: "#f7f7f7", minHeight: "100vh", padding: "32px 0" }}>
@@ -335,34 +470,26 @@ const AllProducts = () => {
                   }}>
                     {Number(product.Price).toLocaleString()} đ
                   </div>
-                  <div style={{ marginTop: 10, display: "flex", justifyContent: "center" }}>
-                    <Link to={`/products/productdetails/${product.ProductId}`}>
-                      <button
-                        className="add-to-cart-btn"
-                        onMouseEnter={() => handleCartHover(idx)}
-                        onMouseLeave={() => handleCartLeave(idx)}
-                        style={{
-                          background: "linear-gradient(90deg,#5f9bd8,#3da0f0)",
-                          color: "#fff",
-                          border: "none",
-                          padding: "8px 12px",
-                          borderRadius: 8,
-                          cursor: "pointer",
-                          fontWeight: 700,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 8
-                        }}
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                    <button
+                      className="add-to-cart-btn"
+                      onClick={() => handleAddToCart(product)}
+                      style={{ flex: 1 }}
+                      onMouseEnter={() => handleCartHover(idx)}
+                      onMouseLeave={() => handleCartLeave(idx)}
+                    >
+                      <span
+                        role="img"
+                        aria-label="cart"
+                        ref={el => (cartRefs.current[idx] = el)}
+                        style={{ display: "inline-block" }}
                       >
-                        <span
-                          role="img"
-                          aria-label="cart"
-                          ref={el => (cartRefs.current[idx] = el)}
-                          style={{ display: "inline-block" }}
-                        >
-                          🧺
-                        </span>
-                        Xem chi tiết
+                        🛒
+                      </span>{" "}
+                    </button>
+                    <Link to={`/products/productdetails/${product.ProductId}`} style={{ flex: 1 }}>
+                      <button className="add-to-cart-btn" style={{ width: '100%' }}>
+                        👁️ 
                       </button>
                     </Link>
                   </div>

@@ -29,6 +29,45 @@ const AccountManagement = () => {
     fetchAccounts();
   }, []); 
 
+  // Hàm khóa/mở khóa tài khoản
+  const handleToggleBan = async (accountId, currentBanStatus, username) => {
+    const action = currentBanStatus === 1 ? 'mở khóa' : 'khóa';
+    const result = await Swal.fire({
+      title: `Bạn có chắc chắn muốn ${action} tài khoản này không?`,
+      text: `Tài khoản ${username} sẽ bị ${action}`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: currentBanStatus === 1 ? '#28a745' : '#ffc107',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: action.charAt(0).toUpperCase() + action.slice(1),
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const response = await fetch(`http://localhost:3000/privatesite/accountmanagement/toggleban/${accountId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Cập nhật state với trạng thái mới
+        setAccounts(accounts.map(acc => 
+          acc.AccountId === accountId ? { ...acc, IsBanned: data.account.IsBanned } : acc
+        ));
+        Swal.fire("Thành công!", data.message, "success");
+      } else {
+        Swal.fire("Lỗi", data.message || `Đã xảy ra lỗi khi ${action} tài khoản`, "error");
+      }
+    } catch (error) {
+      Swal.fire("Lỗi", "Không thể kết nối tới máy chủ. Vui lòng thử lại sau.", "error");
+    }
+  };
+
   // Hàm xóa tài khoản với hiệu ứng xác nhận và thông báo
   const handleDelete = async (accountId) => {
     const result = await Swal.fire({
@@ -95,6 +134,9 @@ const AccountManagement = () => {
                         <h6 className="fw-600 mb-0">Mã khách hàng</h6>
                       </th>
                       <th className="text-center">
+                        <h6 className="fw-600 mb-0">Trạng thái</h6>
+                      </th>
+                      <th className="text-center">
                         <h6 className="fw-600 mb-0">Lệnh</h6>
                       </th>
                     </tr>
@@ -123,18 +165,33 @@ const AccountManagement = () => {
                       <td className="border-bottom-0 text-center">
                         <p className="mb-0 fw-normal">{acc.CustomerId}</p>
                       </td>
+                      <td className="border-bottom-0 text-center">
+                        {acc.IsBanned === 1 ? (
+                          <span className="badge bg-danger">Đã khóa</span>
+                        ) : (
+                          <span className="badge bg-success">Hoạt động</span>
+                        )}
+                      </td>
                       <td className="border-bottom-0">
-                      <div className="d-flex gap-3 justify-content-center">
+                      <div className="d-flex gap-2 justify-content-center">
                         <Link  to={`/privatesite/accountmanagement/${acc.AccountId}`}
                           state={{ account: acc }} className="btn btn-primary btn-sm">
                           Chi tiết
                         </Link>
-                        <button
+                        {acc.IdGroup !== 1 && (
+                          <button
+                            className={`btn btn-sm ${acc.IsBanned === 1 ? 'btn-success' : 'btn-warning'}`}
+                            onClick={() => handleToggleBan(acc.AccountId, acc.IsBanned, acc.Username)}
+                          >
+                            {acc.IsBanned === 1 ? 'Mở khóa' : 'Khóa'}
+                          </button>
+                        )}
+                        {/* <button
                           className="btn btn-danger btn-sm"
                           onClick={() => handleDelete(acc.AccountId)}
                         >
                           Xóa
-                        </button>
+                        </button> */}
                       </div>
                       </td>
                     </tr>

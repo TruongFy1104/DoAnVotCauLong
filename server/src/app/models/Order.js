@@ -52,6 +52,14 @@ const Order = sequelize.define(
       allowNull: true,
       defaultValue: "Pending",
     },
+    CancelReason: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    CancelNote: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
   },
   {
     tableName: "order",

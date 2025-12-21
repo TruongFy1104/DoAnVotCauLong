@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
 import {SlidebarFeatures,SlidebarGallery} from "../Component/Slidebar/Slidebar";  
 import Slidebar from "../Component/Slidebar/Slidebar";
 import "../Css/Style.css"; 
@@ -71,6 +72,138 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Hàm xử lý thêm vào giỏ hàng
+  const handleAddToCart = async (product) => {
+    try {
+      // Lấy chi tiết sản phẩm để có thông tin size
+      const detailResponse = await fetch(`http://localhost:3000/products/productdetails/${product.ProductId}`);
+      const productDetail = await detailResponse.json();
+      
+      const clothingSizes = productDetail.ClothingSizes || [];
+      const shoeSizes = productDetail.ShoeSizes || [];
+      const hasSizes = clothingSizes.length > 0 || shoeSizes.length > 0;
+
+      // Nếu sản phẩm có size, hiển thị modal chọn size
+      if (hasSizes) {
+        // Extract size values from objects
+        const clothingSizeValues = clothingSizes.map(s => s.Size || s.size || s);
+        const shoeSizeValues = shoeSizes.map(s => s.Size || s.size || s);
+        const sizeOptions = [...clothingSizeValues, ...shoeSizeValues];
+        
+        const { value: selectedSize } = await Swal.fire({
+          title: 'Chọn size',
+          html: `
+            <div style="text-align: left; padding: 10px;">
+              <p style="margin-bottom: 15px; font-weight: 600;">${product.ProductName}</p>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                ${sizeOptions.map(size => `
+                  <button class="size-option-btn" data-size="${size}" style="
+                    padding: 12px;
+                    border: 2px solid #e5e7eb;
+                    border-radius: 8px;
+                    background: white;
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: all 0.2s;
+                  ">
+                    ${size}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          `,
+          showCancelButton: true,
+          confirmButtonText: 'Thêm vào giỏ',
+          cancelButtonText: 'Hủy',
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          didOpen: () => {
+            const buttons = document.querySelectorAll('.size-option-btn');
+            let selectedBtn = null;
+            buttons.forEach(btn => {
+              btn.addEventListener('click', () => {
+                if (selectedBtn) {
+                  selectedBtn.style.border = '2px solid #e5e7eb';
+                  selectedBtn.style.background = 'white';
+                  selectedBtn.style.color = 'black';
+                }
+                btn.style.border = '2px solid #3085d6';
+                btn.style.background = '#3085d6';
+                btn.style.color = 'white';
+                selectedBtn = btn;
+              });
+            });
+          },
+          preConfirm: () => {
+            const selectedBtn = document.querySelector('.size-option-btn[style*="rgb(48, 133, 214)"]');
+            if (!selectedBtn) {
+              Swal.showValidationMessage('Vui lòng chọn size!');
+              return false;
+            }
+            return selectedBtn.getAttribute('data-size');
+          }
+        });
+
+        if (selectedSize) {
+          addToCartWithSize(product, selectedSize);
+        }
+      } else {
+        // Sản phẩm không có size, thêm trực tiếp
+        addToCartWithSize(product, null);
+      }
+    } catch (error) {
+      console.error('Error checking sizes:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Không thể kiểm tra size sản phẩm.',
+        confirmButtonColor: '#d33'
+      });
+    }
+  };
+
+  const addToCartWithSize = (product, size) => {
+    try {
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      const cartItem = {
+        Avatar: product.Avatar,
+        ProductId: product.ProductId,
+        ProductName: product.ProductName,
+        Price: product.Price,
+        Quantity: 1,
+        Size: size
+      };
+
+      const existingProductIndex = cart.findIndex(
+        item => item.ProductId === cartItem.ProductId && item.Size === cartItem.Size
+      );
+
+      if (existingProductIndex !== -1) {
+        cart[existingProductIndex].Quantity += 1;
+      } else {
+        cart.push(cartItem);
+      }
+
+      localStorage.setItem('cart', JSON.stringify(cart));
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: 'Sản phẩm đã được thêm vào giỏ hàng!',
+        showConfirmButton: false,
+        timer: 1500
+      });
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.',
+        confirmButtonColor: '#d33'
+      });
+    }
+  };
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -104,23 +237,23 @@ export default function HomePage() {
         <SlidebarFeatures />
         <SlidebarGallery />
       </div>
-      <ProductCarousel products={products} />
-      <RacketGrid rackets={rackets} />
+      <ProductCarousel products={products} handleAddToCart={handleAddToCart} />
+      <RacketGrid rackets={rackets} handleAddToCart={handleAddToCart} />
       <div className="section-divider">
         <span className="section-divider-text">— GIÀY CẦU LÔNG  —</span>
       </div>
-      <ClothesGrid clothes={clothes} />
+      <ClothesGrid clothes={clothes} handleAddToCart={handleAddToCart} />
       <div className="section-divider">
         <span className="section-divider-text">— QUẦN ÁO CẦU LÔNG —</span>
       </div>
-      <ShoesGrid shoes={shoes} />
+      <ShoesGrid shoes={shoes} handleAddToCart={handleAddToCart} />
     </div>
   );
 }
 // ---- HẾT SỬA ĐOẠN NÀY----
 
 // Các component con nhận props thay vì dùng biến toàn cục
-function ProductCarousel({ products }) {
+function ProductCarousel({ products, handleAddToCart }) {
   const [startIdx, setStartIdx] = useState(0);
   const visibleCount = 5;
   const maxIdx = Math.max(0, products.length - visibleCount);
@@ -255,9 +388,11 @@ function ProductCarousel({ products }) {
                 <div className="product-status">
                   {p.status} <span role="img" aria-label="fire" style={{ marginLeft: 4 }}>🔥</span>
                 </div>
-                <Link to={`/products/productdetails/${p.ProductId}`}>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                   <button
                     className="add-to-cart-btn"
+                    onClick={() => handleAddToCart(p)}
+                    style={{ flex: 1 }}
                     onMouseEnter={() => handleCartHover(idx)}
                     onMouseLeave={() => handleCartLeave(idx)}
                   >
@@ -267,11 +402,15 @@ function ProductCarousel({ products }) {
                       ref={el => (cartRefs.current[idx] = el)}
                       style={{ display: "inline-block" }}
                     >
-                      🧺
+                      🛒
                     </span>{" "}
-                    Xem chi tiết
                   </button>
-                </Link>
+                  <Link to={`/products/productdetails/${p.ProductId}`} style={{ flex: 1 }}>
+                    <button className="add-to-cart-btn" style={{ width: '100%' }}>
+                      👁️
+                    </button>
+                  </Link>
+                </div>
               </div>
             </div>
           ))}
@@ -287,7 +426,7 @@ function ProductCarousel({ products }) {
   );
 };
 
-function RacketGrid({ rackets }) {
+function RacketGrid({ rackets, handleAddToCart }) {
   const cartRefs = useRef([]);
   const handleCartHover = (idx) => {
     gsap.to(cartRefs.current[idx], {
@@ -324,24 +463,29 @@ function RacketGrid({ rackets }) {
                 <div className="product-info">
                   <div className="product-name">{p.ProductName}</div>
                   <div className="product-price">{Number(p.Price).toLocaleString()} VNĐ</div>
-                  <Link to={`/products/productdetails/${p.ProductId}`}>
-                   <button
-                    className="add-to-cart-btn"
-                    onMouseEnter={() => handleCartHover(row * 5 + idx)}
-                    onMouseLeave={() => handleCartLeave(row * 5 + idx)}
-                  >
-                    <span
-                      role="img"
-                      aria-label="cart"
-                      ref={el => (cartRefs.current[row * 5 + idx] = el)}
-                      style={{ display: "inline-block" }}
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                    <button
+                      className="add-to-cart-btn"
+                      onClick={() => handleAddToCart(p)}
+                      style={{ flex: 1 }}
+                      onMouseEnter={() => handleCartHover(row * 5 + idx)}
+                      onMouseLeave={() => handleCartLeave(row * 5 + idx)}
                     >
-                      🛍️
-                    </span>{" "}
-                    Xem chi tiết
-                  </button>
-                  </Link>
-                 
+                      <span
+                        role="img"
+                        aria-label="cart"
+                        ref={el => (cartRefs.current[row * 5 + idx] = el)}
+                        style={{ display: "inline-block" }}
+                      >
+                        🛒
+                      </span>{" "}
+                    </button>
+                    <Link to={`/products/productdetails/${p.ProductId}`} style={{ flex: 1 }}>
+                      <button className="add-to-cart-btn" style={{ width: '100%' }}>
+                        👁️ 
+                      </button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
@@ -357,7 +501,7 @@ function RacketGrid({ rackets }) {
   );
 }
 
-function ClothesGrid({ clothes }) {
+function ClothesGrid({ clothes, handleAddToCart }) {
   const cartRefs = useRef([]);
   const handleCartHover = (idx) => {
     gsap.to(cartRefs.current[idx], {
@@ -394,23 +538,30 @@ function ClothesGrid({ clothes }) {
                 <div className="product-info">
                   <div className="product-name">{p.ProductName}</div>
                   <div className="product-price">{Number(p.Price).toLocaleString()} VNĐ</div>
-                  <Link to={`/products/productdetails/${p.ProductId}`}>
-                  <button
-                    className="add-to-cart-btn"
-                    onMouseEnter={() => handleCartHover(row * 5 + idx)}
-                    onMouseLeave={() => handleCartLeave(row * 5 + idx)}
-                  >
-                    <span
-                      role="img"
-                      aria-label="cart"
-                      ref={el => (cartRefs.current[row * 5 + idx] = el)}
-                      style={{ display: "inline-block" }}
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                    <button
+                      className="add-to-cart-btn"
+                      onClick={() => handleAddToCart(p)}
+                      style={{ flex: 1 }}
+                      onMouseEnter={() => handleCartHover(row * 5 + idx)}
+                      onMouseLeave={() => handleCartLeave(row * 5 + idx)}
                     >
-                      🛍️
-                    </span>{" "}
-                    Xem chi tiết
-                  </button>
-                  </Link>
+                      <span
+                        role="img"
+                        aria-label="cart"
+                        ref={el => (cartRefs.current[row * 5 + idx] = el)}
+                        style={{ display: "inline-block" }}
+                      >
+                        🛒
+                      </span>{" "}
+                  
+                    </button>
+                    <Link to={`/products/productdetails/${p.ProductId}`} style={{ flex: 1 }}>
+                      <button className="add-to-cart-btn" style={{ width: '100%' }}>
+                        👁️ 
+                      </button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
@@ -426,7 +577,7 @@ function ClothesGrid({ clothes }) {
   );
 }
 
-function ShoesGrid({ shoes }) {
+function ShoesGrid({ shoes, handleAddToCart }) {
   const cartRefs = useRef([]);
   const handleCartHover = (idx) => {
     gsap.to(cartRefs.current[idx], {
@@ -463,24 +614,30 @@ function ShoesGrid({ shoes }) {
                 <div className="product-info">
                   <div className="product-name">{p.ProductName}</div>
                   <div className="product-price">{Number(p.Price).toLocaleString()} VNĐ</div>
-                  <Link to={`/products/productdetails/${p.ProductId}`}>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                     <button
-                    className="add-to-cart-btn"
-                    onMouseEnter={() => handleCartHover(row * 5 + idx)}
-                    onMouseLeave={() => handleCartLeave(row * 5 + idx)}
-                  >
-                    <span
-                      role="img"
-                      aria-label="cart"
-                      ref={el => (cartRefs.current[row * 5 + idx] = el)}
-                      style={{ display: "inline-block" }}
+                      className="add-to-cart-btn"
+                      onClick={() => handleAddToCart(p)}
+                      style={{ flex: 1 }}
+                      onMouseEnter={() => handleCartHover(row * 5 + idx)}
+                      onMouseLeave={() => handleCartLeave(row * 5 + idx)}
                     >
-                      🛍️
-                    </span>{" "}
-                    Xem chi tiết
-                  </button>
-                  </Link>
-                 
+                      <span
+                        role="img"
+                        aria-label="cart"
+                        ref={el => (cartRefs.current[row * 5 + idx] = el)}
+                        style={{ display: "inline-block" }}
+                      >
+                        🛒
+                      </span>{" "}
+                  
+                    </button>
+                    <Link to={`/products/productdetails/${p.ProductId}`} style={{ flex: 1 }}>
+                      <button className="add-to-cart-btn" style={{ width: '100%' }}>
+                        👁️ 
+                      </button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}

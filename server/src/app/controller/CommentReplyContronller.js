@@ -7,21 +7,32 @@ const SECRET_KEY = process.env.SECRET_KEY || "saddasdasadsasdadsas";
 exports.getRepliesByComment = async (req, res) => {
   try {
     const { commentId } = req.params;
+
+    // Test: bỏ include để kiểm tra dữ liệu
+    // const replies = await CommentReply.findAll({
+    //   where: { CommentId: commentId },
+    //   order: [["CreatedAt", "ASC"]],
+    // });
+
+    // Nếu association đúng, dùng include như sau:
     const replies = await CommentReply.findAll({
       where: { CommentId: commentId },
-      include: {
+      include: [{
         model: Account,
         attributes: ["Username", "Firstname", "Lastname", "Email"],
-      },
+        required: false // Không bắt buộc phải có Account
+      }],
       order: [["CreatedAt", "ASC"]],
     });
+
     res.json(replies);
   } catch (error) {
-    res.status(500).json({ message: "Lỗi khi lấy phản hồi", error });
+    console.error("Lỗi khi lấy phản hồi:", error);
+    res.status(500).json({ message: "Lỗi khi lấy phản hồi", error: error.message });
   }
 };
 
-// Thêm reply mới
+// Thêm reply mới (chỉ admin/nhân viên)
 exports.addReply = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
@@ -37,10 +48,18 @@ exports.addReply = async (req, res) => {
       return res.status(400).json({ message: "Thiếu CommentId hoặc Content" });
     }
 
-    const reply = await CommentReply.create({ CommentId, AccountId, Content });
+    // Kiểm tra quyền: chỉ admin (IdGroup = 1) hoặc nhân viên (IdGroup = 2) mới được phản hồi
     const account = await Account.findByPk(AccountId, {
-      attributes: ["Username", "Firstname", "Lastname", "Email"],
+      attributes: ["Username", "Firstname", "Lastname", "Email", "IdGroup"],
     });
+    
+    if (!account || (account.IdGroup !== 1 && account.IdGroup !== 3)) {
+      return res.status(403).json({ 
+        message: "Chỉ quản trị viên và nhân viên mới có thể phản hồi bình luận." 
+      });
+    }
+
+    const reply = await CommentReply.create({ CommentId, AccountId, Content });
     res.status(201).json({ ...reply.toJSON(), Account: account });
   } catch (error) {
     console.error(error); // log lỗi ra terminal
@@ -67,9 +86,10 @@ exports.deleteReply = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy phản hồi." });
 
     const isOwner = String(reply.AccountId) === String(decoded.userId);
-    const isAdmin = String(me?.IdGroup) === "1";
+    const isAdmin = String(me?.IdGroup) === "1"; // 1 = Admin
+    const isStaff = String(me?.IdGroup) === "3"; // 3 = Nhân viên
 
-    if (!(isOwner || isAdmin)) {
+    if (!(isOwner || isAdmin || isStaff)) {
       return res
         .status(403)
         .json({ message: "Bạn không có quyền xóa phản hồi này." });

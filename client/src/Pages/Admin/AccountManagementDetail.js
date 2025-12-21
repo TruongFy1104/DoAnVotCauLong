@@ -9,8 +9,48 @@ const DetailAccount = ({ onPasswordChange }) => {
       throw new Error("Token không tồn tại. Hãy đăng nhập lại.");
     }
     const { state } = useLocation();
-    const account = state?.account;
     const { id } = useParams();
+    const [account, setAccount] = useState(state?.account);
+    
+    // Hàm fetch thông tin tài khoản từ server
+    const fetchAccountDetail = async () => {
+        try {
+            const response = await fetch(
+                `http://localhost:3000/privatesite/accountmanagement/detail/${id}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Dữ liệu nhận được:', data);
+                setAccount(data);
+            } else {
+                console.error('Lỗi response:', response.status);
+            }
+        } catch (error) {
+            console.error('Lỗi khi fetch thông tin tài khoản:', error);
+        }
+    };
+
+    // Fetch thông tin khi component mount
+    useEffect(() => {
+        fetchAccountDetail();
+    }, [id]);
+    
+    // Hàm lấy tên quyền từ IdGroup
+    const getRoleName = (groupId) => {
+        switch(groupId) {
+            case 1: return 'Quản trị viên';
+            case 2: return 'Người dùng';
+            case 3: return 'Nhân viên';
+            default: return 'Không xác định';
+        }
+    };
+    
     const handleRoleAssignment = async () => {
         try {
           const result = await Swal.fire({
@@ -22,6 +62,7 @@ const DetailAccount = ({ onPasswordChange }) => {
               3: 'Nhân viên' 
             },
             inputPlaceholder: 'Chọn quyền',
+            inputValue: account?.IdGroup?.toString() || '2',
             showCancelButton: true,
             confirmButtonText: 'Xác nhận',
             cancelButtonText: 'Hủy',
@@ -43,13 +84,20 @@ const DetailAccount = ({ onPasswordChange }) => {
             const data = await response.json();
       
             if (response.ok) {
+              const roleName = result.value === '1' ? 'Quản trị viên' : 
+                              result.value === '2' ? 'Người dùng' : 'Nhân viên';
+              
+              // Cập nhật state ngay lập tức
+              setAccount(prevAccount => ({
+                ...prevAccount,
+                IdGroup: parseInt(result.value)
+              }));
+              
               Swal.fire(
                 'Thành công!',
-                `Đã gán quyền: ${
-                  result.value === '1' ? 'Quản trị viên' : 'Người dùng'
-                } cho tài khoản ${account.Username}`,
+                `Đã gán quyền: ${roleName} cho tài khoản ${account.Username}`,
                 'success'
-              ).then(() => window.location.reload(true));
+              );
             } else {
               Swal.fire(
                 'Thất bại!',
@@ -104,7 +152,7 @@ const DetailAccount = ({ onPasswordChange }) => {
                                     </h3>
                                     <ul className="list-group list-group-unbordered mb-3">
                                         <li className="list-group-item">
-                                            <b>Nhóm tài khoản: </b> {account.IdGroup === 1 ? 'quản trị' : 'người dùng'}
+                                            <b>Nhóm tài khoản: </b> {getRoleName(account.IdGroup)}
                                             {/* <a className="float-right text-decoration-none c-black">{groupName}</a> */}
                                         </li>
                                     </ul>
@@ -203,6 +251,17 @@ const DetailAccount = ({ onPasswordChange }) => {
                                                         type="text"
                                                         className="form-control"
                                                         value={account?.Address}
+                                                        disabled
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="form-group row mb-3">
+                                                <label className="col-sm-2 col-form-label">Quyền hiện tại</label>
+                                                <div className="col-sm-10">
+                                                    <input
+                                                        type="text"
+                                                        className="form-control"
+                                                        value={getRoleName(account?.IdGroup)}
                                                         disabled
                                                     />
                                                 </div>

@@ -40,7 +40,5 @@ const Product = require('./Product');
     timestamps: false,
 }
 );
-  OrderDetail.belongsTo(Order, { foreignKey: 'OrderId' });
-  OrderDetail.belongsTo(Product, { foreignKey: 'ProductId' });
 
 module.exports = OrderDetail;

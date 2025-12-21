@@ -14,6 +14,7 @@ import BookingView from "../Pages/BookingView";
 import BookingCheckout from "../Pages/BookingCheckout";
 import PaymentSuccess from "../Pages/PaymentSuccess";
 import PaymentFailed from "../Pages/PaymentFailed";
+import Community from "../Pages/Community/Community";
 const UserLayout = () => {
   return (
     <div>
@@ -23,6 +24,7 @@ const UserLayout = () => {
           <Route path="/" element={<Navigate to="/home" />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/booking" element={<BookingView />} />
+          <Route path="/community" element={<Community />} />
           <Route path="/bookingcheckout" element={<BookingCheckout />} />
           <Route
             path="/products/productdetails/:id"

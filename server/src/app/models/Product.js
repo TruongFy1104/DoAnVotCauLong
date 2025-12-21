@@ -37,9 +37,25 @@ const Product = sequelize.define('Product', {
         type: DataTypes.FLOAT,
         allowNull: false,
     },
+    CostPrice: {
+        type: DataTypes.FLOAT,
+        allowNull: true,
+        defaultValue: 0,
+    },
+    Quantity: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: 0,
+    },
     Avatar: {
         type: DataTypes.STRING,
         allowNull: true,
+    },
+    IsHidden: {
+        type: DataTypes.TINYINT,
+        allowNull: true,
+        defaultValue: 0,
+        comment: '0: Hiện, 1: Ẩn'
     },
 }, {
     tableName: 'Product',

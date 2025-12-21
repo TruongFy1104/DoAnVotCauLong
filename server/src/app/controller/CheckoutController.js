@@ -3,12 +3,91 @@ const Customer = require("../models/Customer");
 const Order = require("../models/Order");
 const OrderDetail = require("../models/OrderDetail");
 const Account = require("../models/Account");
+const Product = require("../models/Product");
+const ClothingSize = require("../models/ClothingSize");
+const ShoeSize = require("../models/ShoesSize");
+const Category = require("../models/Category");
 const qs = require("qs");
 const crypto = require("crypto");
 const VnpayTransaction = require("../models/VnpayTransaction");
 const SECRET_KEY = "saddasdasadsasdadsas";
 const axios = require("axios");
 const vnpayConfig = require("../../config/vnpayConfig"); // Thêm dòng này
+
+// Hàm helper trừ số lượng sản phẩm
+const decreaseProductQuantity = async (productId, quantity, size = null) => {
+  try {
+    const product = await Product.findByPk(productId, {
+      include: [{ model: Category, as: 'Category' }]
+    });
+    
+    if (!product) {
+      throw new Error(`Không tìm thấy sản phẩm ID: ${productId}`);
+    }
+
+    const categoryName = product.Category?.CategoryName;
+    
+    // Nếu là quần áo hoặc giày và có size
+    if (size && (categoryName === 'Quần áo' || categoryName === 'Giày')) {
+      if (categoryName === 'Quần áo') {
+        const clothingSize = await ClothingSize.findOne({
+          where: { ProductId: productId, Size: size }
+        });
+        
+        if (!clothingSize) {
+          throw new Error(`Không tìm thấy size ${size} cho sản phẩm`);
+        }
+        
+        if (clothingSize.Quantity < quantity) {
+          throw new Error(`Không đủ số lượng cho size ${size}. Chỉ còn ${clothingSize.Quantity}`);
+        }
+        
+        // Trừ số lượng của size
+        await clothingSize.update({
+          Quantity: clothingSize.Quantity - quantity
+        });
+      } else if (categoryName === 'Giày') {
+        const shoeSize = await ShoeSize.findOne({
+          where: { ProductId: productId, Size: size }
+        });
+        
+        if (!shoeSize) {
+          throw new Error(`Không tìm thấy size ${size} cho sản phẩm`);
+        }
+        
+        if (shoeSize.Quantity < quantity) {
+          throw new Error(`Không đủ số lượng cho size ${size}. Chỉ còn ${shoeSize.Quantity}`);
+        }
+        
+        // Trừ số lượng của size
+        await shoeSize.update({
+          Quantity: shoeSize.Quantity - quantity
+        });
+      }
+      
+      // Cập nhật lại tổng số lượng trong Product
+      const totalClothingQty = await ClothingSize.sum('Quantity', { where: { ProductId: productId } }) || 0;
+      const totalShoeQty = await ShoeSize.sum('Quantity', { where: { ProductId: productId } }) || 0;
+      await product.update({ Quantity: totalClothingQty + totalShoeQty });
+      
+    } else {
+      // Sản phẩm thông thường (vợt, phụ kiện)
+      if (product.Quantity < quantity) {
+        throw new Error(`Không đủ số lượng sản phẩm. Chỉ còn ${product.Quantity}`);
+      }
+      
+      await product.update({
+        Quantity: product.Quantity - quantity
+      });
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Lỗi khi trừ số lượng:', error);
+    throw error;
+  }
+};
+
 exports.getCustomerData = async (req, res) => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
@@ -24,12 +103,19 @@ exports.getCustomerData = async (req, res) => {
     if (!customer) {
       return res.status(404).json({ message: "Không tìm thấy khách hàng." });
     }
+    
+    // Lấy thông tin Account để có IdGroup
+    const account = await Account.findOne({
+      where: { AccountId: user.userId },
+    });
+    
     res.json({
       Firstname: customer.Firstname,
       Lastname: customer.Lastname,
       Address: customer.Address,
       Mobile: customer.Mobile,
       Email: customer.Email,
+      IdGroup: account?.IdGroup || null,
     });
   } catch (err) {
     console.error("Error in getCustomerData:", err);
@@ -66,8 +152,6 @@ exports.checkout = async (req, res) => {
     const account = await Account.findOne({
       where: { AccountId: user.userId },
     });
-
-    // Debug giá trị nhận được và giá trị hiện tại
 
     // Nếu có địa chỉ hoặc số điện thoại mới, cập nhật vào Customer và Account
     let needUpdateCustomer = false;
@@ -137,6 +221,22 @@ exports.checkout = async (req, res) => {
         Quantity: orderDetails[i].Quantity,
         Size: orderDetails[i].Size,
       });
+      
+      // Trừ số lượng sản phẩm
+      try {
+        await decreaseProductQuantity(
+          orderDetails[i].ProductId,
+          orderDetails[i].Quantity,
+          orderDetails[i].Size
+        );
+      } catch (error) {
+        // Nếu không đủ số lượng, rollback đơn hàng
+        await OrderDetail.destroy({ where: { OrderId: newOrder.OrderId } });
+        await newOrder.destroy();
+        return res.status(400).json({ 
+          message: error.message || 'Không thể trừ số lượng sản phẩm' 
+        });
+      }
     }
 
     res.status(201).json({
@@ -231,6 +331,22 @@ exports.createMoMoPaymentUrl = async (req, res) => {
           Quantity: orderDetails[i].Quantity,
           Size: orderDetails[i].Size,
         });
+        
+        // Trừ số lượng sản phẩm
+        try {
+          await decreaseProductQuantity(
+            orderDetails[i].ProductId,
+            orderDetails[i].Quantity,
+            orderDetails[i].Size
+          );
+        } catch (error) {
+          // Nếu không đủ số lượng, rollback đơn hàng
+          await OrderDetail.destroy({ where: { OrderId: newOrder.OrderId } });
+          await newOrder.destroy();
+          return res.status(400).json({ 
+            message: error.message || 'Không thể trừ số lượng sản phẩm' 
+          });
+        }
       }
     }
 
@@ -284,9 +400,9 @@ exports.createMoMoPaymentUrl = async (req, res) => {
 };
 
 // ===== ENV =====
-const vnp_TmnCode = (process.env.VNP_TMN_CODE || "31IY64MS").trim();
+const vnp_TmnCode = (process.env.VNP_TMN_CODE || "DR9E9WNJ").trim();
 const vnp_HashSecret = (
-  process.env.VNP_HASH_SECRET || "6CWYMYU82JHFE6SP7FKDFTRLKXEKLIIJ"
+  process.env.VNP_HASH_SECRET || "IK3MBRP5Z62IBD8ELK0DWX4Z64SXH9WU"
 ).trim();
 const vnp_Url = (
   process.env.VNP_URL || "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"
@@ -392,6 +508,39 @@ exports.createVNPayPaymentUrl = async (req, res) => {
     if (!Number.isFinite(amt) || amt <= 0)
       return res.status(400).json({ message: "amount không hợp lệ" });
 
+    // ======= CẬP NHẬT THÔNG TIN KHÁCH HÀNG =======
+    let needUpdateCustomer = false;
+    let needUpdateAccount = false;
+    const account = await Account.findOne({
+      where: { AccountId: user.userId },
+    });
+
+    if (address && address !== customer.Address) {
+      customer.Address = address;
+      needUpdateCustomer = true;
+    }
+    if (mobile && mobile !== customer.Mobile) {
+      customer.Mobile = mobile;
+      needUpdateCustomer = true;
+    }
+    if (account) {
+      if (address && address !== account.Address) {
+        account.Address = address;
+        needUpdateAccount = true;
+      }
+      if (mobile && mobile !== account.Mobile) {
+        account.Mobile = mobile;
+        needUpdateAccount = true;
+      }
+    }
+    if (needUpdateCustomer) {
+      await customer.save();
+    }
+    if (needUpdateAccount) {
+      await account.save();
+    }
+    // ============================================
+
     // Order & OrderDetail (Pending)
     const newOrder = await Order.create({
       CustomerId: customer.CustomerId,
@@ -406,7 +555,7 @@ exports.createVNPayPaymentUrl = async (req, res) => {
       Discount: 0,
       CreateAt: new Date(),
       OrderStatusId: 3,
-      PaymentStatus: "Pending", // <--- EN
+      PaymentStatus: "Pending",
     });
 
     if (Array.isArray(cart)) {
@@ -417,6 +566,22 @@ exports.createVNPayPaymentUrl = async (req, res) => {
           Quantity: item.Quantity,
           Size: item.Size || null,
         });
+        
+        // Trừ số lượng sản phẩm
+        try {
+          await decreaseProductQuantity(
+            item.ProductId,
+            item.Quantity,
+            item.Size
+          );
+        } catch (error) {
+          // Nếu không đủ số lượng, rollback đơn hàng
+          await OrderDetail.destroy({ where: { OrderId: newOrder.OrderId } });
+          await newOrder.destroy();
+          return res.status(400).json({ 
+            message: error.message || 'Không thể trừ số lượng sản phẩm' 
+          });
+        }
       }
     }
 
@@ -486,7 +651,6 @@ exports.vnpayReturnHandler = async (req, res) => {
     const transStatus = vnp_Params["vnp_TransactionStatus"];
     const orderIdRaw = vnp_Params["vnp_TxnRef"];
     const orderId = Number.parseInt(orderIdRaw, 10);
-    
     const amount = Number(vnp_Params["vnp_Amount"] || 0);
 
     const order = await Order.findOne({ where: { OrderId: orderId } });
@@ -494,7 +658,6 @@ exports.vnpayReturnHandler = async (req, res) => {
       return res.redirect(`${FE_BASE}/payment-failed?error=order_not_found`);
     }
     if (Number(order.TotalPrice) * 100 !== amount) {
-
       return res.redirect(`${FE_BASE}/payment-failed?error=amount_mismatch`);
     }
 
@@ -506,8 +669,7 @@ exports.vnpayReturnHandler = async (req, res) => {
             { PaymentStatus: "Success" },
             { where: { OrderId: orderId } }
           );
-        
-          const tx = await VnpayTransaction.create({
+          await VnpayTransaction.create({
             OrderId: orderId,
             vnp_TxnRef: vnp_Params["vnp_TxnRef"],
             vnp_Amount: amount / 100,
@@ -517,8 +679,6 @@ exports.vnpayReturnHandler = async (req, res) => {
             vnp_PayDate: vnp_Params["vnp_PayDate"] || null,
             Status: "Success",
           });
-   
-          
         }
       } catch (dbErr) {
         console.error("[VNPay][RETURN] DB error:", {
@@ -529,10 +689,10 @@ exports.vnpayReturnHandler = async (req, res) => {
         });
       }
 
-      // Clear session cart
+      // Clear session cart only after payment success
       try {
         if (req.session) {
-          req.session.cart = []; 
+          req.session.cart = [];
           if (typeof req.session.save === "function") {
             await new Promise((resolve, reject) =>
               req.session.save((err) => (err ? reject(err) : resolve()))
@@ -652,239 +812,3 @@ exports.vnpayIpnHandler = async (req, res) => {
   }
 };
 
-// ===== API CHO MOBILE =====
-
-// API tạo link thanh toán VNPay cho mobile (chỉ trả URL, không redirect)
-exports.createVNPayPaymentUrlMobile = async (req, res) => {
-  try {
-    // Auth
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(" ")[1];
-    if (!token)
-      return res.status(403).json({ message: "Token không được cung cấp" });
-
-    let user;
-    try {
-      user = jwt.verify(token, SECRET_KEY);
-    } catch {
-      return res.status(401).json({ message: "Token không hợp lệ" });
-    }
-
-    // Customer
-    const customer = await Customer.findOne({
-      where: { CustomerId: user.customerid },
-    });
-    if (!customer)
-      return res.status(404).json({ message: "Không tìm thấy khách hàng." });
-
-    // Input - cho mobile có thể đơn giản hơn
-    const {
-      amount,
-      orderInfo,
-      cart,
-      address,
-      mobile,
-      email,
-      firstname,
-      lastname,
-      orderId, // Có thể nhận orderId từ mobile nếu đã tạo order trước đó
-    } = req.body;
-
-    const amt = Number(amount);
-    if (!Number.isFinite(amt) || amt <= 0)
-      return res.status(400).json({ message: "amount không hợp lệ" });
-
-    let newOrder;
-
-    // Nếu mobile đã tạo order trước đó thì dùng orderId có sẵn
-    if (orderId) {
-      newOrder = await Order.findOne({ where: { OrderId: orderId } });
-      if (!newOrder) {
-        return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
-      }
-    } else {
-      // Tạo order mới nếu chưa có
-      newOrder = await Order.create({
-        CustomerId: customer.CustomerId,
-        PaymentMethod: "vnpay",
-        Address: address || customer.Address,
-        Mobile: mobile || customer.Mobile,
-        Email: email || customer.Email,
-        Firstname: firstname || customer.Firstname,
-        Lastname: lastname || customer.Lastname,
-        TotalPrice: amt,
-        SubPrice: amt,
-        Discount: 0,
-        CreateAt: new Date(),
-        OrderStatusId: 3,
-        PaymentStatus: "Pending",
-      });
-
-      // Tạo OrderDetail nếu có cart và ProductId hợp lệ
-      if (Array.isArray(cart)) {
-        for (const item of cart) {
-          // Kiểm tra ProductId có tồn tại không (chỉ tạo nếu ProductId > 0 và có thực)
-          if (item.ProductId && item.ProductId > 1) {
-            try {
-              await OrderDetail.create({
-                OrderId: newOrder.OrderId,
-                ProductId: item.ProductId,
-                Quantity: item.Quantity,
-                Size: item.Size || null,
-              });
-            } catch (err) {
-              console.log(
-                `Không thể tạo OrderDetail cho ProductId ${item.ProductId}:`,
-                err.message
-              );
-              // Tiếp tục tạo order mà không fail
-            }
-          }
-        }
-      }
-    }
-
-    // Tạo URL thanh toán VNPay với return URL cho mobile
-    const vnp_TxnRef = String(newOrder.OrderId);
-    const mobileReturnUrl = `${
-      process.env.MOBILE_APP_SCHEME || "atbadminton"
-    }://payment-result`;
-
-    const vnp_Params = {
-      vnp_Version: "2.1.0",
-      vnp_Command: "pay",
-      vnp_TmnCode: vnp_TmnCode,
-      vnp_Locale: "vn",
-      vnp_CurrCode: "VND",
-      vnp_TxnRef: vnp_TxnRef,
-      vnp_OrderInfo: sanitizeOrderInfo(
-        orderInfo || `Thanh toan don hang mobile #${vnp_TxnRef}`
-      ),
-      vnp_OrderType: "other",
-      vnp_Amount: Math.round(amt) * 100,
-      vnp_ReturnUrl: mobileReturnUrl,
-      vnp_IpAddr: getClientIp(req),
-      vnp_CreateDate: formatVNDateYYYYMMDDHHmmss(),
-    };
-
-    // Ký & URL
-    const signData = buildSignData(vnp_Params);
-    const vnp_SecureHash = crypto
-      .createHmac("sha512", vnp_HashSecret)
-      .update(signData, "utf-8")
-      .digest("hex");
-
-    const paymentUrl = `${vnp_Url}?${buildQueryString({
-      ...vnp_Params,
-      vnp_SecureHashType: "HmacSHA512",
-      vnp_SecureHash,
-    })}`;
-
-    return res.json({
-      success: true,
-      paymentUrl,
-      orderId: newOrder.OrderId,
-      message: "Tạo link thanh toán thành công",
-    });
-  } catch (err) {
-    console.error("[VNPAY Mobile] create error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Lỗi tạo link thanh toán VNPay",
-      error: err.message,
-    });
-  }
-};
-
-// API cập nhật trạng thái thanh toán cho mobile
-exports.updatePaymentStatus = async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const { paymentStatus } = req.body;
-
-    // Auth
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(" ")[1];
-    if (!token)
-      return res.status(403).json({ message: "Token không được cung cấp" });
-
-    let user;
-    try {
-      user = jwt.verify(token, SECRET_KEY);
-    } catch {
-      return res.status(401).json({ message: "Token không hợp lệ" });
-    }
-
-    // Validate input
-    if (!orderId || !paymentStatus) {
-      return res.status(400).json({
-        message: "orderId và paymentStatus là bắt buộc",
-      });
-    }
-
-    const validStatuses = ["Success", "Failed", "Pending", "Cancel"];
-    if (!validStatuses.includes(paymentStatus)) {
-      return res.status(400).json({
-        message:
-          "paymentStatus không hợp lệ. Chỉ chấp nhận: " +
-          validStatuses.join(", "),
-      });
-    }
-
-    // Tìm order và kiểm tra quyền
-    const order = await Order.findOne({
-      where: { OrderId: orderId },
-    });
-
-    if (!order) {
-      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
-    }
-
-    // Kiểm tra order có thuộc về user hiện tại không
-    const customer = await Customer.findOne({
-      where: { CustomerId: user.customerid },
-    });
-
-    if (!customer || order.CustomerId !== customer.CustomerId) {
-      return res.status(403).json({
-        message: "Bạn không có quyền cập nhật đơn hàng này",
-      });
-    }
-
-    // Cập nhật trạng thái thanh toán
-    await Order.update(
-      { PaymentStatus: paymentStatus },
-      { where: { OrderId: orderId } }
-    );
-
-    // Lưu log transaction nếu cần
-    if (paymentStatus === "Success" || paymentStatus === "Failed") {
-      try {
-        await VnpayTransaction.create({
-          OrderId: orderId,
-          vnp_TxnRef: orderId.toString(),
-          vnp_Amount: order.TotalPrice,
-          vnp_ResponseCode: paymentStatus === "Success" ? "00" : "01",
-          Status: paymentStatus,
-        });
-      } catch (logErr) {
-        console.error("Error logging transaction:", logErr);
-        // Không fail request nếu log lỗi
-      }
-    }
-
-    return res.json({
-      success: true,
-      message: `Cập nhật trạng thái thanh toán thành ${paymentStatus}`,
-      orderId: orderId,
-      paymentStatus: paymentStatus,
-    });
-  } catch (err) {
-    console.error("[Mobile] update payment status error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Lỗi cập nhật trạng thái thanh toán",
-      error: err.message,
-    });
-  }
-};

@@ -40,28 +40,20 @@ exports.getAllTimeSlots = async (req, res) => {
 };
 //tạo đặt sân
 exports.createBooking = async (req, res) => {
-  console.log("==> createBooking called");
-  console.log("==> Request body:", req.body);
-  console.log("==> Authorization header:", req.headers.authorization);
-
+  
   const { bookings, firstname, lastname, mobile, email } = req.body;
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
 
-  console.log("==> Extracted token:", token ? "***EXISTS***" : "NULL");
 
   if (!token) {
-    console.log("==> Error: No token provided");
     return res.status(403).json({ message: "Token không được cung cấp" });
   }
   if (!Array.isArray(bookings) || bookings.length === 0) {
-    console.log("==> Error: Invalid bookings data");
     return res.status(400).json({ message: "Thiếu thông tin đặt sân" });
   }
   try {
-    console.log("==> Verifying token with SECRET_KEY:", SECRET_KEY);
     const user = jwt.verify(token, SECRET_KEY);
-    console.log("==> Token verified successfully, user:", user);
     const customer = await Customer.findOne({
       where: { CustomerId: user.customerid || user.CustomerId || user.id },
     });
@@ -113,15 +105,31 @@ exports.createBooking = async (req, res) => {
     let failedBookings = [];
 
     for (const b of bookings) {
-      console.log("==> Processing booking:", b);
+      
+      // Kiểm tra ngày đặt sân không được trong quá khứ
+      const bookingDate = new Date(b.BookingDate || b.bookingDate);
+      const today = new Date();
+      bookingDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      
+      if (bookingDate < today) {
+        failedBookings.push({
+          ...b,
+          message: "Không thể đặt sân cho ngày trong quá khứ!",
+        });
+        continue;
+      }
 
       // Kiểm tra trùng lịch đặt sân
+      // Chỉ kiểm tra với các booking chưa bị hủy
       const existed = await Booking.findOne({
         where: {
           CourtId: b.CourtId || b.courtId,
           TimeSlotId: b.TimeSlotId || b.timeSlotId,
           BookingDate: b.BookingDate || b.bookingDate,
-          Status: { [Op.ne]: "Cancelled" },
+          Status: { 
+            [Op.notIn]: ["Cancelled", "Đã hủy", "User hủy sân"] 
+          },
         },
       });
 
@@ -139,7 +147,7 @@ exports.createBooking = async (req, res) => {
         CourtId: b.CourtId || b.courtId,
         TimeSlotId: b.TimeSlotId || b.timeSlotId,
         BookingDate: b.BookingDate || b.bookingDate,
-        Status: "Đang chờ duyệt",
+        Status: "Đã đặt thành công",
       });
 
       createdBookings.push(newBooking);
@@ -166,7 +174,11 @@ exports.getBookedSlots = async (req, res) => {
   try {
     const bookings = await Booking.findAll({
       where: {
-        Status: { [Op.ne]: "Cancelled" },
+        // Chỉ lấy các booking có trạng thái active (không bị hủy)
+        // Loại trừ: "Cancelled", "Đã hủy", "User hủy sân"
+        Status: { 
+          [Op.notIn]: ["Cancelled", "Đã hủy", "User hủy sân"] 
+        },
       },
       attributes: ["CourtId", "TimeSlotId", "BookingDate"],
     });
@@ -178,25 +190,23 @@ exports.getBookedSlots = async (req, res) => {
 
 exports.getBookingHistory = async (req, res) => {
   try {
-    console.log("==> getBookingHistory called");
-    console.log("==> Authorization header:", req.headers.authorization);
+   
 
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(" ")[1];
 
-    console.log("==> Extracted token:", token ? "***EXISTS***" : "NULL");
 
     if (!token) {
       console.log("==> Error: No token provided");
       return res.status(403).json({ message: "Token không được cung cấp" });
     }
 
-    console.log("==> Verifying token...");
+    
     const user = jwt.verify(token, SECRET_KEY);
-    console.log("==> Token verified successfully, user:", user);
+  
 
     const customerId = user.customerid || user.CustomerId || user.id;
-    console.log("==> CustomerId extracted:", customerId);
+    
 
     if (!customerId) {
       console.log("==> Error: No customerId found");
@@ -205,7 +215,7 @@ exports.getBookingHistory = async (req, res) => {
         .json({ message: "Không tìm thấy thông tin khách hàng." });
     }
 
-    console.log("==> Querying bookings for customerId:", customerId);
+ 
     const bookings = await Booking.findAll({
       where: { CustomerId: customerId },
       order: [["BookingDate", "DESC"]],
@@ -230,8 +240,7 @@ exports.getBookingHistory = async (req, res) => {
       ],
     });
 
-    console.log("==> Raw bookings from DB:", JSON.stringify(bookings, null, 2));
-    console.log("==> Number of bookings found:", bookings.length);
+
 
     // Thêm trường canCancel: chỉ true nếu chưa hủy/thành công
     const result = bookings.map((b) => ({
@@ -245,13 +254,11 @@ exports.getBookingHistory = async (req, res) => {
       canCancel: b.Status !== "Đã hủy" && b.Status !== "Thành công",
     }));
 
-    console.log("==> Processed result:", JSON.stringify(result, null, 2));
-    console.log("==> Sending response...");
+
 
     res.json({ bookings: result });
   } catch (error) {
-    console.error("==> Lỗi getBookingHistory:", error);
-    console.error("==> Error stack:", error.stack);
+
     res.status(500).json({ error: error.message });
   }
 };
@@ -299,6 +306,8 @@ exports.getAllBookings = async (req, res) => {
       TimeSlotId: b.TimeSlotId,
       StartTime: b.TimeSlot ? b.TimeSlot.StartTime : null,
       EndTime: b.TimeSlot ? b.TimeSlot.EndTime : null,
+      CancelReason: b.CancelReason || null,
+      CancelNote: b.CancelNote || null,
     }));
 
     res.json(result);
@@ -334,6 +343,43 @@ exports.cancelManyBookings = async (req, res) => {
         .status(400)
         .json({ message: "Danh sách bookingIds không hợp lệ" });
     }
+    
+    // Lấy thông tin booking để kiểm tra ngày
+    const bookings = await Booking.findAll({
+      where: { BookingId: bookingIds }
+    });
+    
+    if (bookings.length === 0) {
+      return res.status(404).json({ message: "Không tìm thấy booking" });
+    }
+    
+    // Kiểm tra xem có booking nào đã qua ngày không
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const hasPastBooking = bookings.some(booking => {
+      const bookingDate = new Date(booking.BookingDate);
+      bookingDate.setHours(0, 0, 0, 0);
+      return bookingDate < today;
+    });
+    
+    if (hasPastBooking) {
+      return res.status(400).json({ 
+        message: "Không thể hủy đơn đặt sân đã qua ngày sử dụng." 
+      });
+    }
+    
+    // Kiểm tra trạng thái
+    const hasCompletedBooking = bookings.some(booking => 
+      ["Thành công", "Đã hủy", "User hủy sân"].includes(booking.Status)
+    );
+    
+    if (hasCompletedBooking) {
+      return res.status(400).json({ 
+        message: "Không thể hủy đơn đã hoàn thành hoặc đã hủy trước đó." 
+      });
+    }
+    
     await Booking.update(
       { Status: "User hủy sân" },
       { where: { BookingId: bookingIds } }
@@ -348,12 +394,25 @@ exports.cancelManyBookings = async (req, res) => {
 exports.cancelBooking = async (req, res) => {
   try {
     const { id } = req.params;
+    const { reason, note } = req.body; // Nhận lý do và ghi chú từ request
+    
     const booking = await Booking.findByPk(id);
     if (!booking)
       return res.status(404).json({ message: "Không tìm thấy booking" });
+    
     booking.Status = "Đã hủy";
+    
+    // Lưu lý do hủy và ghi chú nếu có
+    if (reason) booking.CancelReason = reason;
+    if (note) booking.CancelNote = note;
+    
     await booking.save();
-    res.json({ message: "Hủy sân thành công!", booking });
+    
+    res.json({ 
+      message: "Hủy sân thành công!", 
+      booking,
+      cancelInfo: { reason, note }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

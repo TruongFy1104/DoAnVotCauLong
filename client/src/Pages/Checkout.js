@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../Css/Style.css";
+import Swal from 'sweetalert2';
 
 export default function Checkout() {
   const [form, setForm] = useState({
@@ -47,7 +48,6 @@ export default function Checkout() {
         return response.json();
       })
       .then((data) => {
-        console.log("Customer data:", data);
         setUserInfo(data);
       })
       .catch((error) => {
@@ -79,13 +79,23 @@ export default function Checkout() {
   const handleCheckout = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Bạn cần đăng nhập để thanh toán.");
+      Swal.fire({
+        icon: 'warning',
+        title: 'Chưa đăng nhập',
+        text: 'Bạn cần đăng nhập để thanh toán.',
+        confirmButtonColor: '#3085d6'
+      });
       window.location.href = "/login";
       return;
     }
 
     if (cart.length === 0) {
-      alert("Giỏ hàng của bạn đang rỗng. Vui lòng thêm sản phẩm vào giỏ hàng.");
+      Swal.fire({
+        icon: 'warning',
+        title: 'Giỏ hàng trống',
+        text: 'Vui lòng thêm sản phẩm vào giỏ hàng.',
+        confirmButtonColor: '#3085d6'
+      });
       return;
     }
 
@@ -96,7 +106,12 @@ export default function Checkout() {
       !userInfo.Firstname ||
       !userInfo.Lastname
     ) {
-      alert("Vui lòng điền đầy đủ họ tên và email.");
+      Swal.fire({
+        icon: 'warning',
+        title: 'Thiếu thông tin',
+        text: 'Vui lòng điền đầy đủ họ tên và email.',
+        confirmButtonColor: '#3085d6'
+      });
       return;
     }
 
@@ -129,7 +144,12 @@ export default function Checkout() {
         window.location.href = data.paymentUrl; // Redirect sang VNPay
         return;
       }
-      alert("Không thể tạo link thanh toán VNPay.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi thanh toán',
+        text: 'Không thể tạo link thanh toán VNPay.',
+        confirmButtonColor: '#d33'
+      });
       return;
     }
 
@@ -160,7 +180,12 @@ export default function Checkout() {
         window.location.href = data.payUrl; // Redirect sang MoMo
         return;
       }
-      alert("Không thể tạo link thanh toán MoMo.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi thanh toán',
+        text: 'Không thể tạo link thanh toán MoMo.',
+        confirmButtonColor: '#d33'
+      });
       return;
     }
 
@@ -185,16 +210,33 @@ export default function Checkout() {
         .then((response) => response.json())
         .then((data) => {
           if (data.message) {
-            alert("Đặt hàng thành công! Mã đơn hàng: " + data.orderId);
-            localStorage.removeItem("cart");
-            setCart([]);
-            window.location.href = "/";
+            Swal.fire({
+              icon: 'success',
+              title: 'Đặt hàng thành công!',
+              html: `Mã đơn hàng: <strong>${data.orderId}</strong><br>Cảm ơn bạn đã mua hàng!`,
+              confirmButtonColor: '#28a745',
+              confirmButtonText: 'Về trang chủ'
+            }).then(() => {
+              localStorage.removeItem("cart");
+              setCart([]);
+              window.location.href = "/";
+            });
           } else {
-            alert("Có lỗi xảy ra khi thanh toán. Vui lòng thử lại.");
+            Swal.fire({
+              icon: 'error',
+              title: 'Lỗi',
+              text: 'Có lỗi xảy ra khi thanh toán. Vui lòng thử lại.',
+              confirmButtonColor: '#d33'
+            });
           }
         })
         .catch((error) => {
-          alert("Có lỗi xảy ra. Vui lòng thử lại.");
+          Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: 'Có lỗi xảy ra. Vui lòng thử lại.',
+            confirmButtonColor: '#d33'
+          });
           console.error(error);
         });
     }

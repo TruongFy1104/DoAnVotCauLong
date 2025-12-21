@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
 const statusBadge = (status) => {
-  if (status === "Thành công") return "bg-success";
-  if (status === "Đang chờ duyệt") return "bg-warning";
+  if (status === "Thành công" || status === "Đã đặt thành công") return "bg-success";
+  if (status === "Đang chờ duyệt" || status === "Chờ duyệt") return "bg-warning";
   if (status === "Đã hủy") return "bg-danger";
   return "bg-secondary";
 };
@@ -68,62 +68,93 @@ const BookingAdmin = () => {
     }
   };
 
-  // Hủy sân
-  const handleCancel = async (bookingId) => {
+  // Hủy sân với lý do
+  const handleCancelWithReason = async (bookingId, defaultReason = '') => {
+    const result = await Swal.fire({
+      title: 'Xác nhận hủy sân',
+      html: `
+        <div style="text-align: left; padding: 0 10px;">
+          <label for="cancelReason" style="font-weight: 600; display: block; margin-bottom: 8px;">Lý do hủy:</label>
+          <select id="cancelReason" class="swal2-input" style="width: 100%; padding: 10px; margin: 0; box-sizing: border-box;">
+            <option value="Khách không đến">Khách không đến</option>
+            <option value="Sân bảo trì">Sân bảo trì</option>
+            <option value="Lý do khác">Lý do khác</option>
+          </select>
+          <label for="cancelNote" style="font-weight: 600; display: block; margin-top: 15px; margin-bottom: 8px;">Ghi chú thêm:</label>
+          <textarea 
+            id="cancelNote" 
+            placeholder="Nhập ghi chú thêm (nếu có)..." 
+            style="width: 100%; min-height: 80px; padding: 10px; margin: 0; box-sizing: border-box; border: 1px solid #d9d9d9; border-radius: 4px; font-family: inherit; font-size: 14px; resize: vertical;"
+          ></textarea>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xác nhận hủy',
+      cancelButtonText: 'Quay lại',
+      width: '500px',
+      preConfirm: () => {
+        const reason = document.getElementById('cancelReason').value;
+        const note = document.getElementById('cancelNote') ? document.getElementById('cancelNote').value : '';
+        return { reason, note };
+      }
+    });
+
+    if (!result.isConfirmed) return;
+
+    const { reason, note } = result.value;
+    console.log("Gửi dữ liệu hủy:", { bookingId, reason, note }); // Debug
+    
     const res = await fetch(`http://localhost:3000/privatesite/cancel-booking/${bookingId}`, {
       method: "PUT",
       headers: {
-        Authorization: `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ reason, note })
     });
     const data = await res.json();
+    console.log("Response từ server:", data); // Debug
+    
     if (res.ok) {
-      setBookings(bookings =>
-        bookings.map(b =>
-          b.BookingId === bookingId ? { ...b, Status: "Đã hủy" } : b
-        )
-      );
-      setFilteredBookings(filteredBookings =>
-        filteredBookings.map(b =>
-          b.BookingId === bookingId ? { ...b, Status: "Đã hủy" } : b
-        )
-      );
-      Swal.fire("Đã hủy!", data.message || "Đã hủy sân!", "success");
+      // Cập nhật state ngay lập tức
+      const updateBooking = (b) => 
+        b.BookingId === bookingId 
+          ? { ...b, Status: "Đã hủy", CancelReason: reason, CancelNote: note || '' } 
+          : b;
+      
+      setBookings(bookings => bookings.map(updateBooking));
+      setFilteredBookings(filteredBookings => filteredBookings.map(updateBooking));
+      
+      // Hiển thị thông báo thành công
+      await Swal.fire({
+        title: "Đã hủy sân!",
+        html: `
+          <div style="text-align: left;">
+            <p>${data.message || "Hủy sân thành công!"}</p>
+            <p><strong>Lý do:</strong> ${reason}</p>
+            ${note ? `<p><strong>Ghi chú:</strong> ${note}</p>` : ''}
+          </div>
+        `,
+        icon: "success"
+      });
+      
+      // Reload lại danh sách từ server để đảm bảo dữ liệu đồng bộ
+      const refreshRes = await fetch("http://localhost:3000/privatesite/all-bookings", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const refreshData = await refreshRes.json();
+      const arr = Array.isArray(refreshData) ? refreshData : (Array.isArray(refreshData.bookings) ? refreshData.bookings : []);
+      setBookings(arr);
+      setFilteredBookings(arr.filter(b => b.BookingId.toString().includes(search)));
     } else {
       Swal.fire("Lỗi", data.message || "Không thể hủy sân!", "error");
     }
   };
 
-  // Thêm hàm xử lý xóa booking
-  const handleDelete = async (bookingId) => {
-    const result = await Swal.fire({
-      title: 'Bạn có chắc muốn xóa đặt sân này?',
-      text: "Hành động này không thể hoàn tác!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Xóa',
-      cancelButtonText: 'Hủy'
-    });
 
-    if (!result.isConfirmed) return;
-
-    const res = await fetch(`http://localhost:3000/privatesite/delete-booking/${bookingId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setBookings(bookings => bookings.filter(b => b.BookingId !== bookingId));
-      setFilteredBookings(filteredBookings => filteredBookings.filter(b => b.BookingId !== bookingId));
-      Swal.fire("Đã xóa!", data.message || "Xóa đặt sân thành công!", "success");
-    } else {
-      Swal.fire("Lỗi", data.message || "Không thể xóa đặt sân!", "error");
-    }
-  };
 
   // Sắp xếp theo ngày mới nhất và BookingId giảm dần
   const sortedBookings = Array.isArray(filteredBookings) ? filteredBookings.slice().sort((a, b) => {
@@ -209,29 +240,55 @@ const BookingAdmin = () => {
                           </div>
                         </td>
                         <td className="border-bottom-0 text-center">
-                          <div className="d-flex gap-3 justify-content-center">
-                            {b.Status === "Đang chờ duyệt" && (
+                          <div className="d-flex gap-2 justify-content-center flex-wrap">
+                            {(b.Status === "Đang chờ duyệt" || b.Status === "Chờ duyệt") && (
                               <>
                                 <button
                                   className="btn btn-success btn-sm rounded-pill px-3"
                                   onClick={() => handleApprove(b.BookingId)}
                                 >
-                                  Duyệt
+                                  ✓ Duyệt
                                 </button>
                                 <button
                                   className="btn btn-danger btn-sm rounded-pill px-3"
-                                  onClick={() => handleCancel(b.BookingId)}
+                                  onClick={() => handleCancelWithReason(b.BookingId, 'Từ chối duyệt')}
                                 >
-                                  Hủy
+                                  ✗ Từ chối
                                 </button>
                               </>
                             )}
-                            <button
-                              className="btn btn-outline-danger btn-sm rounded-pill px-3"
-                              onClick={() => handleDelete(b.BookingId)}
-                            >
-                              Xóa
-                            </button>
+                            {(b.Status === "Thành công" || b.Status === "Đã đặt thành công") && (
+                              <button
+                                className="btn btn-warning btn-sm rounded-pill px-3"
+                                onClick={() => handleCancelWithReason(b.BookingId, 'Khách không đến')}
+                                title="Hủy sân vì khách không đến"
+                              >
+                                🚫 Hủy sân
+                              </button>
+                            )}
+                            {b.Status === "Đã hủy" && (
+                              <button
+                                className="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                                onClick={() => {
+                                  Swal.fire({
+                                    title: 'Thông tin hủy sân',
+                                    html: `
+                                      <div style="text-align: left;">
+                                        <p><strong>Mã đặt sân:</strong> ${b.BookingId}</p>
+                                        <p><strong>Lý do hủy:</strong> ${b.CancelReason || 'Chưa ghi nhận'}</p>
+                                        ${b.CancelNote ? `<p><strong>Ghi chú:</strong> ${b.CancelNote}</p>` : ''}
+                                        <p><strong>Ngày đặt:</strong> ${b.BookingDate}</p>
+                                      </div>
+                                    `,
+                                    icon: 'info',
+                                    confirmButtonText: 'Đóng'
+                                  });
+                                }}
+                                title="Xem lý do hủy"
+                              >
+                                ℹ️ Chi tiết
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 
@@ -14,15 +15,11 @@ const fmt = (d) => {
 };
 
 export default function CommentManagement() {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [productId, setProductId] = useState("");
-  const [q, setQ] = useState("");
+  const location = useLocation();
   const [products, setProducts] = useState([]);
-  const [message, setMessage] = useState("");
-
-  // Modal quản lý phản hồi
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [replyModal, setReplyModal] = useState({
     open: false,
     comment: null,
@@ -30,6 +27,7 @@ export default function CommentManagement() {
     loading: false,
     error: "",
   });
+  const [productComments, setProductComments] = useState([]);
 
   // Lấy danh sách sản phẩm
   const loadProducts = async () => {
@@ -37,102 +35,76 @@ export default function CommentManagement() {
       const res = await axios.get(`${API}/products`, getAuth());
       const list = Array.isArray(res.data) ? res.data : res.data?.result ?? [];
       setProducts(list);
-      return list;
     } catch {
       setProducts([]);
-      return [];
     }
   };
 
-  const productNameOf = (pid) =>
-    products.find((p) => String(p.ProductId) === String(pid))?.ProductName || pid;
-
-  // Lấy tất cả bình luận
-  const fetchAllComments = async () => {
+  // Lấy bình luận theo ProductId (tất cả, bao gồm chưa duyệt)
+  const fetchCommentsByProduct = async (productId) => {
     setLoading(true);
-    setError("");
     try {
-      const list = await loadProducts();
-      if (!list.length) {
-        setRows([]);
-        setLoading(false);
-        return;
-      }
-      const requests = list.map((p) =>
-        axios
-          .get(`${API}/comments/${encodeURIComponent(p.ProductId)}`, getAuth())
-          .then((r) => ({
-            pid: p.ProductId,
-            items: Array.isArray(r.data) ? r.data : r.data?.result ?? [],
-          }))
-          .catch(() => ({ pid: p.ProductId, items: [] }))
-      );
-      const results = await Promise.all(requests);
-      const merged = results.flatMap((r) =>
-        r.items.map((it) => ({ ...it, ProductId: it.ProductId || r.pid }))
-      );
-      setRows(merged);
-    } catch (e) {
-      setError(
-        e?.response?.data?.message ||
-          e.message ||
-          "Lỗi khi tải tất cả bình luận"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Lấy bình luận theo ProductId
-  const fetchByProduct = async () => {
-    if (!productId) {
-      setMessage("Bạn phải nhập ProductId để tải bình luận của sản phẩm đó.");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    try {
-      if (!products.length) await loadProducts();
       const res = await axios.get(
-        `${API}/comments/${encodeURIComponent(productId)}`,
+        `${API}/comments/admin/${encodeURIComponent(productId)}`,
         getAuth()
       );
-      setRows(Array.isArray(res.data) ? res.data : res.data?.result ?? []);
-    } catch (e) {
-      setError(
-        e?.response?.data?.message ||
-          e.message ||
-          "Lỗi khi tải danh sách bình luận"
-      );
+      setComments(Array.isArray(res.data) ? res.data : res.data?.result ?? []);
+    } catch {
+      setComments([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAllComments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const fetchProductComments = async () => {
+      setLoading(true);
+      try {
+        // Lấy danh sách sản phẩm
+        const res = await axios.get(`${API}/products`, getAuth());
+        const products = Array.isArray(res.data) ? res.data : res.data?.result ?? [];
+        // Lấy bình luận từng sản phẩm
+        const requests = products.map((p) =>
+          axios
+            .get(`${API}/comments/admin/${encodeURIComponent(p.ProductId)}`, getAuth())
+            .then((r) => ({
+              ...p,
+              comments: Array.isArray(r.data) ? r.data : r.data?.result ?? [],
+            }))
+            .catch(() => ({
+              ...p,
+              comments: [],
+            }))
+        );
+        const results = await Promise.all(requests);
+        // Chỉ lấy sản phẩm có bình luận
+        const filtered = results
+          .filter((p) => p.comments.length > 0)
+          .map((p) => ({
+            ...p,
+            commentCount: p.comments.length,
+          }));
+        setProductComments(filtered);
 
-  const filtered = useMemo(() => {
-    const kw = q.trim().toLowerCase();
-    return rows.filter((r) => {
-      if (!kw) return true;
-      const fields = [
-        r.Content,
-        r.content,
-        r.ProductId,
-        r.Account?.Username,
-        r.Account?.Email,
-        r.Account?.Firstname,
-        r.Account?.Lastname,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return fields.includes(kw);
-    });
-  }, [rows, q]);
+        // Nếu có productId từ navigation state (từ DashboardStaff), tự động chọn sản phẩm đó
+        if (location.state?.productId) {
+          const targetProduct = results.find(
+            (p) => p.ProductId === location.state.productId
+          );
+          if (targetProduct) {
+            setSelectedProduct(targetProduct);
+            setComments(targetProduct.comments);
+          }
+        }
+      } catch {
+        setProductComments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProductComments();
+  }, [location.state]);
 
   // Modal quản lý phản hồi
   const openReplies = async (comment) => {
@@ -165,10 +137,13 @@ export default function CommentManagement() {
   const deleteReply = async (replyId) => {
     const result = await Swal.fire({
       title: `Xóa phản hồi #${replyId}?`,
+      text: "Bạn có chắc chắn muốn xóa phản hồi này không?",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Xóa",
       cancelButtonText: "Hủy",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
     });
     if (!result.isConfirmed) return;
     try {
@@ -177,6 +152,13 @@ export default function CommentManagement() {
         ...m,
         data: (m.data || []).filter((r) => r.ReplyId !== replyId),
       }));
+      Swal.fire({
+        title: "Đã xóa!",
+        text: "Phản hồi đã được xóa thành công.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false
+      });
     } catch (e) {
       Swal.fire("Lỗi", e?.response?.data?.message || e.message, "error");
     }
@@ -191,173 +173,206 @@ export default function CommentManagement() {
       error: "",
     });
 
-  // Xóa bình luận
-  const onDelete = async (comment) => {
+  // Duyệt bình luận
+  const onApproveComment = async (comment) => {
     const result = await Swal.fire({
-      title: `Xóa bình luận #${comment.CommentId}?`,
-      icon: "warning",
+      title: `Duyệt bình luận #${comment.CommentId}?`,
+      icon: "question",
       showCancelButton: true,
-      confirmButtonText: "Xóa",
+      confirmButtonText: "Duyệt",
       cancelButtonText: "Hủy",
     });
     if (!result.isConfirmed) return;
     try {
-      await axios.delete(`${API}/comments/${comment.CommentId}`, getAuth());
-      setRows((s) => s.filter((x) => x.CommentId !== comment.CommentId));
-      setMessage("Xóa bình luận thành công!");
+      await axios.put(`${API}/comments/approve/${comment.CommentId}`, {}, getAuth());
+      Swal.fire("Thành công", "Đã duyệt bình luận!", "success");
+      // Cập nhật lại danh sách
+      setComments((s) =>
+        s.map((x) =>
+          x.CommentId === comment.CommentId ? { ...x, IsApproved: true } : x
+        )
+      );
     } catch (e) {
       Swal.fire("Lỗi", e?.response?.data?.message || e.message, "error");
     }
   };
 
-  // Table row
-  const Row = ({ r, idx }) => (
-    <tr key={r.CommentId}>
-      <td className="text-center">{idx + 1}</td>
-      <td className="text-center">#{r.CommentId}</td>
-      <td className="text-center">
-        <span className="fw-600">{productNameOf(r.ProductId)}</span>
-        <div style={{ color: "#6b7280", fontSize: 12 }}>
-          (ID: {r.ProductId})
-        </div>
-      </td>
-      <td className="text-center">
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <strong>
-            {r.Account?.Username ||
-              `${r.Account?.Firstname ?? ""} ${r.Account?.Lastname ?? ""}`}
-          </strong>
-          <span style={{ color: "#6b7280", fontSize: 12 }}>
-            {r.Account?.Email}
-          </span>
-        </div>
-      </td>
-      <td>{r.Content || r.content}</td>
-      <td className="text-center">
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <span>{fmt(r.createdAt || r.createAt)}</span>
-          <span style={{ color: "#6b7280", fontSize: 12 }}>
-            Sửa: {fmt(r.updatedAt || r.updateAt)}
-          </span>
-        </div>
-      </td>
-      <td className="text-center">
-        <button
-          className="btn btn-sm btn-info"
-          onClick={() => openReplies(r)}
-          title="Xem phản hồi"
-        >
-          Xem phản hồi
-        </button>
-      </td>
-      <td className="text-center">
-        <button className="btn btn-sm btn-danger" onClick={() => onDelete(r)}>
-          Xóa
-        </button>
-      </td>
-    </tr>
-  );
+  // Xóa bình luận
+  const onDeleteComment = async (comment) => {
+    const result = await Swal.fire({
+      title: `Xóa bình luận #${comment.CommentId}?`,
+      text: "Bạn có chắc chắn muốn xóa bình luận này không?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Xóa",
+      cancelButtonText: "Hủy",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await axios.delete(`${API}/comments/${comment.CommentId}`, getAuth());
+      setComments((s) => s.filter((x) => x.CommentId !== comment.CommentId));
+      Swal.fire({
+        title: "Đã xóa!",
+        text: "Bình luận đã được xóa thành công.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } catch (e) {
+      Swal.fire("Lỗi", e?.response?.data?.message || e.message, "error");
+    }
+  };
 
   return (
     <div className="container-fluid">
-      {message && <div className="alert alert-info">{message}</div>}
       <div className="row">
-        <div className="col-lg-12 d-flex align-items-stretch">
+        <div className="col-12">
           <div className="card w-100">
             <div className="card-body p-4">
-              <h5 className="card-title fw-600 mb-4">Quản lý bình luận</h5>
-              <div className="mb-3 d-flex gap-3">
-                <input
-                  className="form-control"
-                  placeholder="Nhập ProductId (lọc theo sản phẩm)"
-                  value={productId}
-                  onChange={(e) => setProductId(e.target.value)}
-                  style={{ maxWidth: 200 }}
-                />
-                <button
-                  className="btn btn-primary"
-                  onClick={fetchByProduct}
-                  disabled={!productId || loading}
-                >
-                  Lọc
-                </button>
-                <button
-                  className="btn btn-secondary"
-                  onClick={fetchAllComments}
-                  disabled={loading}
-                >
-                  Làm mới
-                </button>
-                <input
-                  className="form-control"
-                  placeholder="Tìm theo nội dung, username, email…"
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  style={{ maxWidth: 300 }}
-                />
-              </div>
-              {error && (
-                <div className="alert alert-danger mb-3">
-                  ⚠️ {error}
-                </div>
-              )}
-              <div className="table-responsive">
+              <h5 className="fw-600 mb-4">Quản lý bình luận theo sản phẩm</h5>
+              {!selectedProduct ? (
                 <table className="table text-nowrap mb-0 align-middle">
-                  <thead className="text-dark fs-4">
+                  <thead>
                     <tr>
-                       <th className=" text-center">
-                        <h6 className="fw-600 mb-0">Id</h6>
-                      </th>
-                       <th className=" text-center">
-                        <h6 className="fw-600 mb-0">CommentId</h6>
-                      </th>
-                       <th className=" text-center">
-                        <h6 className="fw-600 mb-0">Sản phẩm</h6>
-                      </th>
-                       <th className=" text-center">
-                        <h6 className="fw-600 mb-0">Người bình luận</h6>
-                      </th>           
-                       <th className=" text-center">
-                        <h6 className="fw-600 mb-0">Nội dung</h6>
-                      </th>
-                       <th className=" text-center">
-                        <h6 className="fw-600 mb-0">Thời gian</h6>
-                      </th>
-                       <th className=" text-center">
-                        <h6 className="fw-600 mb-0">Phản hồi</h6>
-                      </th>                 
+                      <th>Tên sản phẩm</th>
+                      <th>ID</th>
+                      <th className="text-center">Số bình luận</th>
+                      <th className="text-center">Chi tiết</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((r, i) => (
-                      <Row key={r.CommentId} r={r} idx={i} />
+                    {productComments.map((p) => (
+                      <tr key={p.ProductId}>
+                        <td>{p.ProductName}</td>
+                        <td>{p.ProductId}</td>
+                        <td className="text-center">{p.commentCount}</td>
+                        <td className="text-center">
+                          <button
+                            className="btn btn-info btn-sm"
+                            onClick={() => {
+                              setSelectedProduct(p);
+                              setComments(p.comments);
+                            }}
+                          >
+                            Chi tiết
+                          </button>
+                        </td>
+                      </tr>
                     ))}
-                    {!loading && filtered.length === 0 && (
+                    {productComments.length === 0 && (
                       <tr>
-                        <td colSpan={8} style={{ textAlign: "center", padding: 24 }}>
-                          Không có dữ liệu
+                        <td colSpan={4} className="text-center text-muted">
+                          Không có sản phẩm nào có bình luận.
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
-                {loading && (
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      padding: 16,
+              ) : (
+                <>
+                  <button
+                    className="btn btn-secondary mb-3"
+                    onClick={() => {
+                      setSelectedProduct(null);
+                      setComments([]);
                     }}
                   >
-                    <div className="loader" />
-                  </div>
-                )}
-              </div>
+                    ← Quay lại danh sách sản phẩm
+                  </button>
+                  <h6>
+                    Bình luận cho sản phẩm:{" "}
+                    <strong>{selectedProduct.ProductName}</strong> (ID:{" "}
+                    {selectedProduct.ProductId})
+                  </h6>
+                  {loading ? (
+                    <p className="text-center">Đang tải...</p>
+                  ) : (
+                    <table className="table text-nowrap mb-0 align-middle">
+                      <thead>
+                        <tr>
+                          <th className="text-center">#</th>
+                          <th className="text-center">CommentId</th>
+                          <th className="text-center">Người bình luận</th>
+                          <th className="text-center">Nội dung</th>
+                          <th className="text-center">Thời gian</th>
+                          <th className="text-center">Trạng thái</th>
+                          <th className="text-center">Phản hồi</th>
+                          <th className="text-center">Lệnh</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {comments.map((c, i) => (
+                          <tr key={c.CommentId}>
+                            <td className="text-center">{i + 1}</td>
+                            <td className="text-center">#{c.CommentId}</td>
+                            <td className="text-center">
+                              <strong>
+                                {c.Account?.Username ||
+                                  `${c.Account?.Firstname ?? ""} ${c.Account?.Lastname ?? ""}`}
+                              </strong>
+                              <div style={{ color: "#6b7280", fontSize: 12 }}>
+                                {c.Account?.Email}
+                              </div>
+                            </td>
+                            <td>{c.Content || c.content}</td>
+                            <td className="text-center">
+                              <span>{fmt(c.createdAt || c.createAt)}</span>
+                              <br />
+                              <span style={{ color: "#6b7280", fontSize: 12 }}>
+                                Sửa: {fmt(c.updatedAt || c.updateAt)}
+                              </span>
+                            </td>
+                            <td className="text-center">
+                              {c.IsApproved ? (
+                                <span className="badge bg-success">Đã duyệt</span>
+                              ) : (
+                                <span className="badge bg-warning">Chờ duyệt</span>
+                              )}
+                            </td>
+                            <td className="text-center">
+                              <button
+                                className="btn btn-sm btn-info"
+                                onClick={() => openReplies(c)}
+                              >
+                                Xem phản hồi
+                              </button>
+                            </td>
+                            <td className="text-center">
+                              {!c.IsApproved && (
+                                <button
+                                  className="btn btn-sm btn-success me-1"
+                                  onClick={() => onApproveComment(c)}
+                                >
+                                  Duyệt
+                                </button>
+                              )}
+                              <button
+                                className="btn btn-sm btn-danger"
+                                onClick={() => onDeleteComment(c)}
+                              >
+                                Xóa
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {comments.length === 0 && (
+                          <tr>
+                            <td colSpan={8} className="text-center text-muted">
+                              Không có bình luận nào cho sản phẩm này.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
       </div>
-
       {/* Modal quản lý phản hồi */}
       {replyModal.open && (
         <div
@@ -405,56 +420,54 @@ export default function CommentManagement() {
                 </div>
               )}
               {!replyModal.loading && !replyModal.error && (
-                <div className="table-responsive">
-                  <table className="table text-nowrap mb-0 align-middle">
-                    <thead>
-                      <tr>
-                        <th className="text-center">#</th>
-                        <th className="text-center">ReplyId</th>
-                        <th className="text-center">Người trả lời</th>
-                        <th className="text-center">Nội dung</th>
-                        <th className="text-center">Thời gian</th>
-                        <th className="text-center">Lệnh</th>
+                <table className="table text-nowrap mb-0 align-middle">
+                  <thead>
+                    <tr>
+                      <th className="text-center">#</th>
+                      <th className="text-center">ReplyId</th>
+                      <th className="text-center">Người trả lời</th>
+                      <th className="text-center">Nội dung</th>
+                      <th className="text-center">Thời gian</th>
+                      <th className="text-center">Lệnh</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {replyModal.data.map((rp, i) => (
+                      <tr key={rp.ReplyId}>
+                        <td className="text-center">{i + 1}</td>
+                        <td className="text-center">#{rp.ReplyId}</td>
+                        <td className="text-center">
+                          <div style={{ display: "flex", flexDirection: "column" }}>
+                            <strong>
+                              {rp.Account?.Username ||
+                                `${rp.Account?.Firstname ?? ""} ${rp.Account?.Lastname ?? ""}`}
+                            </strong>
+                            <span style={{ color: "#6b7280", fontSize: 12 }}>
+                              {rp.Account?.Email}
+                            </span>
+                          </div>
+                        </td>
+                        <td>{rp.Content}</td>
+                        <td className="text-center">{fmt(rp.CreatedAt)}</td>
+                        <td className="text-center">
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => deleteReply(rp.ReplyId)}
+                          >
+                            Xóa
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {replyModal.data.map((rp, i) => (
-                        <tr key={rp.ReplyId}>
-                          <td className="text-center">{i + 1}</td>
-                          <td className="text-center">#{rp.ReplyId}</td>
-                          <td className="text-center">
-                            <div style={{ display: "flex", flexDirection: "column" }}>
-                              <strong>
-                                {rp.Account?.Username ||
-                                  `${rp.Account?.Firstname ?? ""} ${rp.Account?.Lastname ?? ""}`}
-                              </strong>
-                              <span style={{ color: "#6b7280", fontSize: 12 }}>
-                                {rp.Account?.Email}
-                              </span>
-                            </div>
-                          </td>
-                          <td>{rp.Content}</td>
-                          <td className="text-center">{fmt(rp.CreatedAt)}</td>
-                          <td className="text-center">
-                            <button
-                              className="btn btn-sm btn-danger"
-                              onClick={() => deleteReply(rp.ReplyId)}
-                            >
-                              Xóa
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {replyModal.data.length === 0 && (
-                        <tr>
-                          <td colSpan={6} style={{ textAlign: "center", padding: 16 }}>
-                            Chưa có phản hồi
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                    {replyModal.data.length === 0 && (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: "center", padding: 16 }}>
+                          Chưa có phản hồi
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>

@@ -4,6 +4,7 @@ const Specification = require('../models/Specification');
 const ClothingSize = require('../models/ClothingSize');
 const ShoeSize = require('../models/ShoesSize');
 const Category = require('../models/Category');
+const OrderDetail = require('../models/OrderDetail');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -12,7 +13,31 @@ const { Op } = require("sequelize");
 
 exports.getAllProducts = async (req, res) => {
     try {
-        const products = await Product.findAll({ include: Brand });
+        const products = await Product.findAll({ 
+            where: {
+                IsHidden: 0  // Chỉ lấy sản phẩm không bị ẩn
+            },
+            include: [
+                { model: Brand, as: 'Brand' },
+                { model: Category, as: 'Category' }
+            ]
+        });
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Lấy tất cả sản phẩm cho admin (bao gồm cả sản phẩm ẩn)
+exports.getAllProductsAdmin = async (req, res) => {
+    try {
+        const products = await Product.findAll({ 
+            include: [
+                { model: Brand, as: 'Brand' },
+                { model: Category, as: 'Category' }
+            ],
+            order: [['ProductId', 'DESC']]
+        });
         res.json(products);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -77,7 +102,7 @@ exports.addProduct = async (req, res) => {
         }
 
         try {
-            const { ProductName, Description, SummaryDescription, Discount, IdBrand, Price, specifications, CategoryId } = req.body;
+            const { ProductName, Description, SummaryDescription, Discount, IdBrand, Price, CostPrice, Quantity, specifications, CategoryId } = req.body;
 
             // Ép kiểu và kiểm tra hợp lệ
             const categoryIdNumber = Number(CategoryId);
@@ -94,6 +119,8 @@ exports.addProduct = async (req, res) => {
                 Discount,
                 IdBrand,
                 Price,
+                CostPrice: CostPrice || 0,
+                Quantity: Quantity || 0,
                 CategoryId: categoryIdNumber,
                 Avatar: avatarPath
             });
@@ -132,7 +159,8 @@ exports.addProduct = async (req, res) => {
                 await Promise.all(specPromises); 
             }
 
-            // Lưu size quần áo nếu có
+            // Lưu size quần áo nếu có và tính lại tổng số lượng
+            let totalQuantityFromSizes = 0;
             if (req.body.clothingSizes) {
                 let clothingSizes = [];
                 try {
@@ -141,18 +169,21 @@ exports.addProduct = async (req, res) => {
                     return res.status(400).json({ error: 'Dữ liệu size quần áo không hợp lệ' });
                 }
                 if (Array.isArray(clothingSizes) && clothingSizes.length > 0) {
-                    const clothingPromises = clothingSizes.map(item =>
-                        ClothingSize.create({
+                    const clothingPromises = clothingSizes.map(item => {
+                        totalQuantityFromSizes += Number(item.quantity) || 0;
+                        return ClothingSize.create({
                             ProductId: newProduct.ProductId,
                             Size: item.size,
                             Quantity: item.quantity
-                        })
-                    );
+                        });
+                    });
                     await Promise.all(clothingPromises);
+                    // Cập nhật tổng số lượng vào Product
+                    await newProduct.update({ Quantity: totalQuantityFromSizes });
                 }
             }
 
-            // Lưu size giày nếu có
+            // Lưu size giày nếu có và tính lại tổng số lượng
             if (req.body.shoeSizes) {
                 let shoeSizes = [];
                 try {
@@ -161,14 +192,17 @@ exports.addProduct = async (req, res) => {
                     return res.status(400).json({ error: 'Dữ liệu size giày không hợp lệ' });
                 }
                 if (Array.isArray(shoeSizes) && shoeSizes.length > 0) {
-                    const shoePromises = shoeSizes.map(item =>
-                        ShoeSize.create({
+                    const shoePromises = shoeSizes.map(item => {
+                        totalQuantityFromSizes += Number(item.quantity) || 0;
+                        return ShoeSize.create({
                             ProductId: newProduct.ProductId,
                             Size: item.size,
                             Quantity: item.quantity
-                        })
-                    );
+                        });
+                    });
                     await Promise.all(shoePromises);
+                    // Cập nhật tổng số lượng vào Product
+                    await newProduct.update({ Quantity: totalQuantityFromSizes });
                 }
             }
 
@@ -179,6 +213,30 @@ exports.addProduct = async (req, res) => {
         }
     });
 };
+// Ẩn/Hiện sản phẩm
+exports.toggleHideProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const product = await Product.findByPk(id);
+        
+        if (!product) {
+            return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
+        }
+
+        // Toggle trạng thái ẩn/hiện
+        const newStatus = product.IsHidden === 1 ? 0 : 1;
+        await product.update({ IsHidden: newStatus });
+
+        res.json({ 
+            message: newStatus === 1 ? 'Đã ẩn sản phẩm' : 'Đã hiện sản phẩm',
+            isHidden: newStatus
+        });
+    } catch (error) {
+        console.error('Lỗi khi ẩn/hiện sản phẩm:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
 exports.deleteProduct = async (req, res) => {
     try {
         const { id } = req.params;
@@ -186,6 +244,19 @@ exports.deleteProduct = async (req, res) => {
         if (!product) {
             return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
         }
+
+        // Kiểm tra xem sản phẩm đã có trong đơn hàng chưa
+        const orderDetailCount = await OrderDetail.count({
+            where: { ProductId: id }
+        });
+
+        if (orderDetailCount > 0) {
+            return res.status(400).json({ 
+                message: 'Không thể xóa sản phẩm này vì đã có trong đơn hàng. Bạn có thể ẩn sản phẩm thay vì xóa.',
+                hasOrders: true
+            });
+        }
+
         // Xóa ảnh đại diện nếu có
         if (product.Avatar && fs.existsSync(product.Avatar)) {
             fs.unlinkSync(product.Avatar);
@@ -202,6 +273,15 @@ exports.deleteProduct = async (req, res) => {
         res.json({ message: 'Xóa sản phẩm thành công' });
     } catch (error) {
         console.error('Lỗi khi xóa sản phẩm:', error);
+        
+        // Xử lý lỗi foreign key constraint
+        if (error.name === 'SequelizeForeignKeyConstraintError') {
+            return res.status(400).json({ 
+                message: 'Không thể xóa sản phẩm này vì đã có liên kết với dữ liệu khác (đơn hàng, giỏ hàng...).',
+                error: 'FOREIGN_KEY_CONSTRAINT'
+            });
+        }
+        
         res.status(500).json({ error: error.message });
     }
 };
@@ -223,6 +303,8 @@ exports.updateProduct = async (req, res) => {
                 Discount,
                 IdBrand,
                 Price,
+                CostPrice,
+                Quantity,
                 specifications
             } = req.body;
             const product = await Product.findByPk(id);
@@ -247,6 +329,8 @@ exports.updateProduct = async (req, res) => {
                 Discount,
                 IdBrand,
                 Price,
+                CostPrice: CostPrice || 0,
+                Quantity: Quantity || 0,
                 Avatar: avatarPath
             });
 
@@ -296,7 +380,8 @@ exports.updateProduct = async (req, res) => {
                 await Promise.all(specPromises);
             }
 
-            // Xử lý cập nhật size quần áo
+            // Xử lý cập nhật size quần áo và tính lại tổng số lượng
+            let totalQuantityFromSizes = 0;
             if (req.body.clothingSizes) {
                 let clothingSizes = [];
                 try {
@@ -308,18 +393,21 @@ exports.updateProduct = async (req, res) => {
                 await ClothingSize.destroy({ where: { ProductId: id } });
                 // Thêm size mới
                 if (Array.isArray(clothingSizes) && clothingSizes.length > 0) {
-                    const clothingPromises = clothingSizes.map(item =>
-                        ClothingSize.create({
+                    const clothingPromises = clothingSizes.map(item => {
+                        totalQuantityFromSizes += Number(item.quantity) || 0;
+                        return ClothingSize.create({
                             ProductId: id,
                             Size: item.size,
                             Quantity: item.quantity
-                        })
-                    );
+                        });
+                    });
                     await Promise.all(clothingPromises);
+                    // Cập nhật tổng số lượng vào Product
+                    await product.update({ Quantity: totalQuantityFromSizes });
                 }
             }
 
-            // Xử lý cập nhật size giày
+            // Xử lý cập nhật size giày và tính lại tổng số lượng
             if (req.body.shoeSizes) {
                 let shoeSizes = [];
                 try {
@@ -331,14 +419,17 @@ exports.updateProduct = async (req, res) => {
                 await ShoeSize.destroy({ where: { ProductId: id } });
                 // Thêm size mới
                 if (Array.isArray(shoeSizes) && shoeSizes.length > 0) {
-                    const shoePromises = shoeSizes.map(item =>
-                        ShoeSize.create({
+                    const shoePromises = shoeSizes.map(item => {
+                        totalQuantityFromSizes += Number(item.quantity) || 0;
+                        return ShoeSize.create({
                             ProductId: id,
                             Size: item.size,
                             Quantity: item.quantity
-                        })
-                    );
+                        });
+                    });
                     await Promise.all(shoePromises);
+                    // Cập nhật tổng số lượng vào Product
+                    await product.update({ Quantity: totalQuantityFromSizes });
                 }
             }
 
@@ -422,6 +513,122 @@ try {
     });
 }
 };
+// Cập nhật số lượng sản phẩm
+exports.updateProductQuantity = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { quantity } = req.body;
+
+        if (quantity === undefined || quantity === null) {
+            return res.status(400).json({ message: 'Số lượng không được để trống' });
+        }
+
+        if (quantity < 0) {
+            return res.status(400).json({ message: 'Số lượng không được nhỏ hơn 0' });
+        }
+
+        const product = await Product.findByPk(id, {
+            include: [{ model: Category, as: 'Category' }]
+        });
+
+        if (!product) {
+            return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
+        }
+
+        const categoryName = product.Category?.CategoryName;
+
+        // Nếu là sản phẩm có size (Quần áo hoặc Giày), cảnh báo
+        if (categoryName === 'Quần áo' || categoryName === 'Giày') {
+            return res.status(400).json({ 
+                message: `Sản phẩm này có size. Vui lòng cập nhật số lượng từng size trong phần chỉnh sửa sản phẩm.`,
+                isProductWithSize: true
+            });
+        }
+
+        // Cập nhật số lượng cho sản phẩm thông thường
+        await product.update({ Quantity: parseInt(quantity) });
+
+        res.json({ 
+            message: 'Cập nhật số lượng thành công',
+            product: {
+                ProductId: product.ProductId,
+                ProductName: product.ProductName,
+                Quantity: product.Quantity
+            }
+        });
+    } catch (error) {
+        console.error('Lỗi khi cập nhật số lượng:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Cập nhật số lượng size cụ thể
+exports.updateSizeQuantity = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { sizeType, size, quantity } = req.body;
+
+        if (quantity === undefined || quantity === null) {
+            return res.status(400).json({ message: 'Số lượng không được để trống' });
+        }
+
+        if (quantity < 0) {
+            return res.status(400).json({ message: 'Số lượng không được nhỏ hơn 0' });
+        }
+
+        const product = await Product.findByPk(id);
+        if (!product) {
+            return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
+        }
+
+        // Cập nhật số lượng size
+        if (sizeType === 'clothing') {
+            const clothingSize = await ClothingSize.findOne({
+                where: { ProductId: id, Size: size }
+            });
+            
+            if (!clothingSize) {
+                return res.status(404).json({ message: `Không tìm thấy size ${size}` });
+            }
+            
+            await clothingSize.update({ Quantity: parseInt(quantity) });
+            
+            // Tính lại tổng số lượng
+            const totalQuantity = await ClothingSize.sum('Quantity', { where: { ProductId: id } }) || 0;
+            await product.update({ Quantity: totalQuantity });
+            
+            return res.json({ 
+                message: 'Cập nhật số lượng size thành công',
+                totalQuantity
+            });
+        } else if (sizeType === 'shoe') {
+            const shoeSize = await ShoeSize.findOne({
+                where: { ProductId: id, Size: size }
+            });
+            
+            if (!shoeSize) {
+                return res.status(404).json({ message: `Không tìm thấy size ${size}` });
+            }
+            
+            await shoeSize.update({ Quantity: parseInt(quantity) });
+            
+            // Tính lại tổng số lượng
+            const totalQuantity = await ShoeSize.sum('Quantity', { where: { ProductId: id } }) || 0;
+            await product.update({ Quantity: totalQuantity });
+            
+            return res.json({ 
+                message: 'Cập nhật số lượng size thành công',
+                totalQuantity
+            });
+        } else {
+            return res.status(400).json({ message: 'Loại size không hợp lệ' });
+        }
+    } catch (error) {
+        console.error('Lỗi khi cập nhật số lượng size:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
 exports.getImagesByProductId = async (req, res) => {
     try {
         const { productId } = req.params; // Lấy productId từ URL

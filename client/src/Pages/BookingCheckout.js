@@ -116,6 +116,28 @@ export default function BookingCheckout() {
     group.timeSlots.sort((a, b) => a.timeSlotId - b.timeSlotId);
   });
 
+  // Hàm nhóm các khung giờ liên tiếp
+  function groupConsecutiveSlots(slots) {
+    if (slots.length === 0) return [];
+    const groups = [];
+    let currentGroup = [slots[0]];
+    
+    for (let i = 1; i < slots.length; i++) {
+      const prevSlot = slots[i - 1];
+      const currSlot = slots[i];
+      
+      // Kiểm tra nếu slot hiện tại liên tiếp với slot trước (timeSlotId tăng 1)
+      if (currSlot.timeSlotId === prevSlot.timeSlotId + 1) {
+        currentGroup.push(currSlot);
+      } else {
+        groups.push(currentGroup);
+        currentGroup = [currSlot];
+      }
+    }
+    groups.push(currentGroup);
+    return groups;
+  }
+
   // Gom các booking thành nhóm theo sân và ngày
   function groupBookings(bookings) {
     const groups = [];
@@ -200,7 +222,7 @@ export default function BookingCheckout() {
           <table className="booking-table">
             <thead>
               <tr>
-                <th>#</th>
+                <th>Đơn</th>
                 <th>Sân</th>
                 <th>Ngày</th>
                 <th>Khung giờ</th>
@@ -208,33 +230,53 @@ export default function BookingCheckout() {
               </tr>
             </thead>
             <tbody>
-              {groupedSlots.map((group, idx) => {
-                // Lấy slot đầu và cuối để xác định thời gian bắt đầu/kết thúc
-                const firstSlot = group.timeSlots[0];
-                const lastSlot = group.timeSlots[group.timeSlots.length - 1];
-                // Nếu có startTime/endTime thì dùng, không thì fallback về timeSlotLabel
-                const timeLabel = (firstSlot.startTime && lastSlot.endTime)
-                  ? `${firstSlot.startTime.slice(0,5)} - ${lastSlot.endTime.slice(0,5)}`
-                  : (
-                    firstSlot.timeSlotLabel && lastSlot.timeSlotLabel
-                      ? `${firstSlot.timeSlotLabel.split('-')[0]}-${lastSlot.timeSlotLabel.split('-')[1]}`
-                      : group.timeSlots.map(s => s.timeSlotLabel || s.timeSlotId).join(', ')
+              {(() => {
+                let orderNumber = 0;
+                return groupedSlots.map((group, groupIdx) => {
+                  // Nhóm các slot liên tiếp
+                  const consecutiveGroups = groupConsecutiveSlots(group.timeSlots);
+                  
+                  return consecutiveGroups.map((slotGroup, idx) => {
+                    orderNumber++;
+                    const firstSlot = slotGroup[0];
+                    const lastSlot = slotGroup[slotGroup.length - 1];
+                    
+                    // Tạo label khung giờ
+                    const timeLabel = (firstSlot.startTime && lastSlot.endTime)
+                      ? `${firstSlot.startTime.slice(0,5)} - ${lastSlot.endTime.slice(0,5)}`
+                      : (
+                        firstSlot.timeSlotLabel && lastSlot.timeSlotLabel
+                          ? `${firstSlot.timeSlotLabel.split('-')[0]} - ${lastSlot.timeSlotLabel.split('-')[1]}`
+                          : slotGroup.map(s => s.timeSlotLabel || s.timeSlotId).join(', ')
+                        );
+                    
+                    const slotCount = slotGroup.length;
+                    const price = slotCount * 70000;
+                    
+                    return (
+                      <tr key={`${groupIdx}-${idx}`}>
+                        <td><b>#{orderNumber}</b></td>
+                        <td>{group.courtName || group.courtId}</td>
+                        <td className="booking-date">{group.bookingDate}</td>
+                        <td>{timeLabel} <span style={{color: '#666'}}>({slotCount} giờ)</span></td>
+                        <td><b>{price.toLocaleString()} đ</b></td>
+                      </tr>
                     );
-                return (
-                  <tr key={idx}>
-                    <td>{idx + 1}</td>
-                    <td>{group.courtName || group.courtId}</td>
-                    <td className="booking-date">{group.bookingDate}</td>
-                    <td>{timeLabel}</td>
-                    <td>{(group.timeSlots.length * 70000).toLocaleString()} VNĐ</td>
-                  </tr>
-                );
-              })}
+                  });
+                });
+              })()}
             </tbody>
             <tfoot>
               <tr>
                 <td colSpan={4}><b>Tổng tiền</b></td>
-                <td><b>{(bookingSlots.length * 70000).toLocaleString()} VNĐ</b></td>
+                <td><b>{(bookingSlots.length * 70000).toLocaleString()} đ</b></td>
+              </tr>
+              <tr style={{backgroundColor: '#fff3cd'}}>
+                <td colSpan={5} style={{textAlign: 'center', padding: '12px', color: '#856404'}}>
+                  <i className="fa fa-info-circle" style={{marginRight: 8}}></i>
+                  <b>Lưu ý:</b> Các khung giờ liên tiếp sẽ được gộp thành 1 đơn. 
+                  Nếu có khoảng trống giữa các giờ đặt, hệ thống sẽ tự động tách thành nhiều đơn riêng biệt.
+                </td>
               </tr>
             </tfoot>
           </table>

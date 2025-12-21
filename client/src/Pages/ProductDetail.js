@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import Swal from "sweetalert2";
 import "../Css/Style.css";
 
 export default function ProductDetail() {
@@ -19,6 +20,7 @@ export default function ProductDetail() {
   const [replyingTo, setReplyingTo] = useState(null);
   const [replies, setReplies] = useState({});
   const [selectedSize, setSelectedSize] = useState(null);
+  const [userRole, setUserRole] = useState(null); // Lưu role của user (IdGroup)
   // Gọi API chi tiết sản phẩm
   useEffect(() => {
     const fetchProductDetails = async () => {
@@ -35,6 +37,28 @@ export default function ProductDetail() {
     };
     fetchProductDetails();
   }, [id]);
+
+  // Lấy thông tin user để kiểm tra role
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const response = await fetch('http://localhost:3000/checkout/getcustomer', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          console.log('User info:', data); // Debug
+          console.log('IdGroup:', data.IdGroup); // Debug
+          setUserRole(data.IdGroup);
+        }
+      } catch (error) {
+        console.error('Lỗi khi lấy thông tin user:', error);
+      }
+    };
+    fetchUserInfo();
+  }, []);
 
   // Gọi API lấy ảnh sản phẩm
   useEffect(() => {
@@ -103,8 +127,17 @@ export default function ProductDetail() {
     if (!commentInput.trim()) return;
     const token = localStorage.getItem('token');
     if (!token) {
-      alert('Bạn cần đăng nhập để bình luận.');
-      window.location.href = '/login';
+      Swal.fire({
+        icon: 'warning',
+        title: 'Chưa đăng nhập',
+        text: 'Bạn cần đăng nhập để bình luận.',
+        confirmButtonColor: '#3085d6',
+        confirmButtonText: 'Đăng nhập ngay'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = '/login';
+        }
+      });
       return;
     }
     try {
@@ -119,8 +152,21 @@ export default function ProductDetail() {
           Content: commentInput,
         }),
       });
+      
       if (!response.ok) throw new Error('Thêm bình luận thất bại');
+      
+      const data = await response.json();
       setCommentInput("");
+      
+      // Hiển thị thông báo bình luận đang chờ duyệt
+      Swal.fire({
+        icon: 'info',
+        title: 'Đã gửi bình luận',
+        text: data.message || 'Bình luận của bạn đang chờ quản trị viên duyệt.',
+        confirmButtonColor: '#3085d6',
+        confirmButtonText: 'Đồng ý'
+      });
+      
       // Load lại bình luận
       const fetchComments = async () => {
         try {
@@ -134,7 +180,12 @@ export default function ProductDetail() {
       };
       fetchComments();
     } catch (error) {
-      alert('Đã xảy ra lỗi khi thêm bình luận');
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Đã xảy ra lỗi khi thêm bình luận',
+        confirmButtonColor: '#d33'
+      });
     }
   };
 
@@ -154,8 +205,17 @@ export default function ProductDetail() {
     if (!replyInput[commentId] || !replyInput[commentId].trim()) return;
     const token = localStorage.getItem('token');
     if (!token) {
-      alert('Bạn cần đăng nhập để trả lời.');
-      window.location.href = '/login';
+      Swal.fire({
+        icon: 'warning',
+        title: 'Chưa đăng nhập',
+        text: 'Bạn cần đăng nhập để trả lời.',
+        confirmButtonColor: '#3085d6',
+        confirmButtonText: 'Đăng nhập ngay'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = '/login';
+        }
+      });
       return;
     }
     try {
@@ -170,6 +230,18 @@ export default function ProductDetail() {
           Content: replyInput[commentId],
         }),
       });
+      
+      if (res.status === 403) {
+        const data = await res.json();
+        Swal.fire({
+          icon: 'error',
+          title: 'Không có quyền',
+          text: data.message || 'Chỉ quản trị viên và nhân viên mới có thể phản hồi bình luận.',
+          confirmButtonColor: '#d33'
+        });
+        return;
+      }
+      
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.message || 'Thêm phản hồi thất bại');
@@ -182,7 +254,12 @@ export default function ProductDetail() {
         [commentId]: true
       }));
     } catch (e) {
-      alert('Đã xảy ra lỗi khi thêm phản hồi: ' + (e.message || ''));
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Đã xảy ra lỗi khi thêm phản hồi: ' + (e.message || ''),
+        confirmButtonColor: '#d33'
+      });
     }
   };
 
@@ -193,7 +270,13 @@ export default function ProductDetail() {
        Array.isArray(productDetails.ShoeSizes) && productDetails.ShoeSizes.length > 0)
       && !selectedSize
     ) {
-      alert("Vui lòng chọn size trước khi thêm vào giỏ hàng!");
+      Swal.fire({
+        icon: 'warning',
+        title: 'Chưa chọn size!',
+        text: 'Vui lòng chọn size trước khi thêm vào giỏ hàng!',
+        confirmButtonColor: '#3085d6',
+        confirmButtonText: 'Đồng ý'
+      });
       return;
     }
 
@@ -218,10 +301,22 @@ export default function ProductDetail() {
         cart.push(cartItem);
       }
       localStorage.setItem('cart', JSON.stringify(cart));
-      alert('Sản phẩm đã được thêm vào giỏ hàng!');
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: 'Sản phẩm đã được thêm vào giỏ hàng!',
+        showConfirmButton: false,
+        timer: 1500
+      });
     } catch (error) {
       console.error('Error adding to cart:', error);
-      alert('Thêm sản phẩm vào giỏ hàng thất bại');
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi!',
+        text: 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.',
+        confirmButtonColor: '#d33'
+      });
     }
   };
 
@@ -362,15 +457,18 @@ export default function ProductDetail() {
                   </span>
                 </div>
                 <div className="pd-comment-content">{c.Content}</div>
-                <button
-                  className="pd-reply-btn"
-                  onClick={() => {
-                    setReplyingTo(replyingTo === c.CommentId ? null : c.CommentId);
-                    if (replyingTo !== c.CommentId) fetchReplies(c.CommentId);
-                  }}
-                >
-                  Trả lời
-                </button>
+                {/* Nút trả lời - chỉ hiển thị cho admin/nhân viên */}
+                {(userRole == 1 || userRole == 3) && (
+                  <button
+                    className="pd-reply-btn"
+                    onClick={() => {
+                      setReplyingTo(replyingTo === c.CommentId ? null : c.CommentId);
+                      if (replyingTo !== c.CommentId) fetchReplies(c.CommentId);
+                    }}
+                  >
+                    Trả lời
+                  </button>
+                )}
 
                 {/* Nút xem phản hồi */}
                 {Array.isArray(replies[c.CommentId]) && replies[c.CommentId].length > 0 && (
@@ -395,7 +493,7 @@ export default function ProductDetail() {
                     {replies[c.CommentId].map((r) => (
                       <div key={r.ReplyId} className="pd-reply-item">
                         <span className="pd-reply-user">
-                          {r.Account?.Username || r.Account?.Email || "Khách"}
+                          Nhân viên
                         </span>
                         <span className="pd-reply-time">
                           {r.CreatedAt ? new Date(r.CreatedAt).toLocaleString("vi-VN") : ""}

@@ -12,13 +12,13 @@ export default function Footer() {
         <div className="footer-col">
           <div className="footer-logo-row">
             <img src="/Images/AT-white.png" alt="XBSports" className="footer-logo"/>
-            <span className="footer-logo-text">AT BADMINTON</span>
+            <span className="footer-logo-text">NPT BADMINTON</span>
           </div>
-          <p>AT BADMINTON - Hệ thống cửa hàng chuyên cung cấp các sản phẩm cầu lông chính hãng: vợt, giày, quần áo, phụ kiện.</p>
+          <p>NPT BADMINTON - Hệ thống cửa hàng chuyên cung cấp các sản phẩm cầu lông chính hãng: vợt, giày, quần áo, phụ kiện.</p>
           <ul className="footer-contact">
             <li><span role="img" aria-label="location">📍</span> Hệ thống cửa hàng toàn quốc</li>
             <li><span role="img" aria-label="phone">📞</span> 0343439444</li>
-            <li><span role="img" aria-label="mail">✉️</span> ATsport@gmail.com</li>
+            <li><span role="img" aria-label="mail">✉️</span> NPTBadminton@gmail.com</li>
           </ul>
           <div>Hotline mua hàng: 0343439444</div>
           <div style={{ marginTop: 8 }}>
@@ -49,9 +49,9 @@ export default function Footer() {
         </div>
         <div className="footer-col">
           <h4>THỜI GIAN MỞ CỬA</h4>
-          <div>08:00 - 21:30</div>
+          <div>24/7</div>
           <div style={{ margin: "8px 0" }}>
-            Tư vấn online qua Zalo <a href="https://xbsports.vn/pages/he-thong-cua-hang" style={{ color: "#5f9bd8" }}>0343439444</a>
+            Tư vấn online qua Zalo <a >0343439444</a>
           </div>
           <div>PHƯƠNG THỨC THANH TOÁN</div>
           <div className="footer-payments">

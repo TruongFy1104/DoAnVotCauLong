@@ -145,12 +145,12 @@ const handleViewDetails = (productId) => {
       <div className="header-logo">
         <Link to="/home" >
         <img src="Images/AT.png" alt="Logo" className="logo-img" />
-        <span className="logo-text">AT BADMINTON</span>
+        <span className="logo-text">NPT BADMINTON</span>
         </Link>
       </div>
       <nav className="header-nav">
         <ul>
-          <li><Link to="/home"><a href="#">Home</a></Link></li>
+          <li><Link to="/home"><a href="#">Trang chủ</a></Link></li>
           <li
             className="dropdown-parent"
             ref={dropdownRef}
@@ -163,7 +163,7 @@ const handleViewDetails = (productId) => {
               onClick={() => { setProductDropdown(false); setHoveredType(null); }}
               style={{ display: "block", width: "100%" }}
             >
-              Products
+              Sản phẩm
             </Link>
             <div className={`dropdown-menu${productDropdown ? " show" : ""}`}>
               <div className="dropdown-level1">
@@ -199,8 +199,10 @@ const handleViewDetails = (productId) => {
               )}
             </div>
           </li>
-          <li><Link to="/aboutus"><a href="#">About Us</a></Link></li>
           <li><Link to="/booking"><a href="#">Đặt sân</a></Link></li>
+          <li><Link to="/community"><a href="#">Cộng đồng</a></Link></li>
+          <li><Link to="/aboutus"><a href="#">Về chúng tôi</a></Link></li>
+
 
         </ul>
       </nav>

@@ -18,14 +18,32 @@ const AddProductForm = () => {
   const [productSummary, setProductSummary] = useState('');
   const [productDescription, setProductDescription] = useState('');
   const [productPrice, setProductPrice] = useState('');
+  const [productCostPrice, setProductCostPrice] = useState('');
   const [productDiscount, setProductDiscount] = useState('');
   const [productBrand, setProductBrand] = useState('');
   const [productCategory, setProductCategory] = useState('');
+  const [productQuantity, setProductQuantity] = useState('');
   const [specifications, setSpecifications] = useState([{ SpecificationName: '', SpecificationContent: '' }]);
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [clothingSizes, setClothingSizes] = useState([{ size: '', quantity: 0 }]);
   const [shoeSizes, setShoeSizes] = useState([{ size: '', quantity: 0 }]);
+  
+  // Hàm format số với dấu phẩy
+  const formatNumber = (value) => {
+    if (!value) return '';
+    // Loại bỏ tất cả ký tự không phải số
+    const number = value.toString().replace(/[^0-9]/g, '');
+    // Thêm dấu phẩy ngăn cách hàng nghìn
+    return number.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
+  // Hàm chuyển về số thuần
+  const parseNumber = (value) => {
+    if (!value) return '';
+    return value.toString().replace(/,/g, '');
+  };
+
   // Fetch brands
   useEffect(() => {
     const fetchBrands = async () => {
@@ -74,9 +92,11 @@ const AddProductForm = () => {
           setProductSummary(product.SummaryDescription);
           setProductDescription(product.Description);
           setProductPrice(product.Price);
+          setProductCostPrice(product.CostPrice || '');
           setProductDiscount(product.Discount);
           setProductBrand(product.IdBrand);
           setProductCategory(product.CategoryId || "");
+          setProductQuantity(product.Quantity || "");
           setSpecifications(product.Specifications || []);
           setProductId(product.ProductId);
           setProductImage(product.Avatar);
@@ -141,16 +161,28 @@ const AddProductForm = () => {
     }
 
     // Log giá trị trước khi gửi
-    console.log("CategoryId FE gửi lên:", productCategory, typeof productCategory);
 
     const formData = new FormData();
     formData.append('ProductName', productName);
     formData.append('Description', productDescription);
     formData.append('SummaryDescription', productSummary);
-    formData.append('Price', productPrice);
+    formData.append('Price', parseNumber(productPrice) || 0);
+    formData.append('CostPrice', parseNumber(productCostPrice) || 0);
     formData.append('Discount', productDiscount);
     formData.append('IdBrand', productBrand);
     formData.append('CategoryId', Number(productCategory));
+    
+    // Tự động tính Quantity từ size hoặc dùng giá trị nhập tay
+    const selectedCategory = categories.find(cat => cat.CategoryId == productCategory);
+    let calculatedQuantity = productQuantity;
+    
+    if (selectedCategory?.CategoryName === 'Quần áo') {
+      calculatedQuantity = clothingSizes.filter(s => s.size).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+    } else if (selectedCategory?.CategoryName === 'Giày') {
+      calculatedQuantity = shoeSizes.filter(s => s.size).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+    }
+    
+    formData.append('Quantity', calculatedQuantity || 0);
     formData.append('Avatar', productImage);
     formData.append('specifications', JSON.stringify(specifications));
     productMultiImage.forEach((image) => formData.append('Images', image));
@@ -295,29 +327,89 @@ const AddProductForm = () => {
                   />
                 </div>
                 <div className="mb-3">
-                  <label htmlFor="productPrice" className="form-label fw-600">Giá</label>
-                  <input
-                    type="number"
-                    name='Price'
-                    className="form-control"
-                    id="productPrice"
-                    value={productPrice}
-                    onChange={(e) => setProductPrice(e.target.value)}
-                    placeholder="Nhập giá sản phẩm"
-                  />
+                  <label htmlFor="productPrice" className="form-label fw-600">Giá bán (VNĐ)</label>
+                  <div className="input-group">
+                    <input
+                      type="text"
+                      name='Price'
+                      className="form-control"
+                      id="productPrice"
+                      value={formatNumber(productPrice)}
+                      onChange={(e) => {
+                        const rawValue = parseNumber(e.target.value);
+                        setProductPrice(rawValue);
+                      }}
+                      placeholder="Nhập giá bán"
+                    />
+                    <span className="input-group-text">VNĐ</span>
+                  </div>
                 </div>
                 <div className="mb-3">
-                  <label htmlFor="productDiscount" className="form-label fw-600">Giảm giá</label>
-                  <input
-                    type="number"
-                    name='Discount'
-                    className="form-control"
-                    id="productDiscount"
-                    value={productDiscount}
-                    onChange={(e) => setProductDiscount(e.target.value)}
-                    placeholder="Nhập giảm giá sản phẩm"
-                  />
+                  <label htmlFor="productCostPrice" className="form-label fw-600">Giá nhập (VNĐ)</label>
+                  <div className="input-group">
+                    <input
+                      type="text"
+                      name='CostPrice'
+                      className="form-control"
+                      id="productCostPrice"
+                      value={formatNumber(productCostPrice)}
+                      onChange={(e) => {
+                        const rawValue = parseNumber(e.target.value);
+                        setProductCostPrice(rawValue);
+                      }}
+                      placeholder="Nhập giá nhập/giá vốn"
+                    />
+                    <span className="input-group-text">VNĐ</span>
+                  </div>
+                  <small className="text-muted">Giá nhập từ nhà cung cấp (dùng để tính lợi nhuận)</small>
                 </div>
+                <div className="mb-3">
+                  <label htmlFor="productDiscount" className="form-label fw-600">Giảm giá (%)</label>
+                  <div className="input-group">
+                    <input
+                      type="number"
+                      name='Discount'
+                      className="form-control"
+                      id="productDiscount"
+                      value={productDiscount}
+                      onChange={(e) => setProductDiscount(e.target.value)}
+                      placeholder="Nhập % giảm giá"
+                      min="0"
+                      max="100"
+                    />
+                    <span className="input-group-text">%</span>
+                  </div>
+                </div>
+                {/* Chỉ hiện trường số lượng cho sản phẩm KHÔNG có size */}
+                {productCategory && !['Quần áo', 'Giày'].includes(categories.find(cat => cat.CategoryId == productCategory)?.CategoryName) && (
+                  <div className="mb-3">
+                    <label htmlFor="productQuantity" className="form-label fw-600">Số lượng</label>
+                    <input
+                      type="number"
+                      name='Quantity'
+                      className="form-control"
+                      id="productQuantity"
+                      value={productQuantity}
+                      onChange={(e) => setProductQuantity(e.target.value)}
+                      placeholder="Nhập số lượng sản phẩm"
+                    />
+                  </div>
+                )}
+                {/* Hiển thị tổng số lượng từ size cho sản phẩm có size */}
+                {productCategory && ['Quần áo', 'Giày'].includes(categories.find(cat => cat.CategoryId == productCategory)?.CategoryName) && (
+                  <div className="mb-3">
+                    <label className="form-label fw-600">Tổng số lượng (tự động tính từ size)</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={categories.find(cat => cat.CategoryId == productCategory)?.CategoryName === 'Quần áo' 
+                        ? clothingSizes.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+                        : shoeSizes.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)}
+                      disabled
+                      style={{ backgroundColor: '#e9ecef', fontWeight: 'bold' }}
+                    />
+                  </div>
+                )}
                 <div className="mb-3">
                   <label htmlFor="productBrand" className="form-label fw-600">Thương hiệu</label>
                   <select

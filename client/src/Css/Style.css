@@ -569,7 +569,7 @@ aside::-webkit-scrollbar {
   color: #fff;
   border: none;
   border-radius: 5px;
-  padding: 7px 18px;
+  padding: 2px 18px;
   font-size: 1rem;
   cursor: pointer;
   transition: background 0.18s;
@@ -1852,6 +1852,7 @@ aside::-webkit-scrollbar {
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(44, 86, 115, 0.10);
+  table-layout: auto;
 }
 
 .booking-table th, .booking-table td {
@@ -1866,6 +1867,11 @@ aside::-webkit-scrollbar {
   color: #1d4ed8;
   font-weight: 700;
   letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.booking-table td {
+  word-wrap: break-word;
 }
 
 .booking-table tr:last-child td {
@@ -1878,6 +1884,12 @@ aside::-webkit-scrollbar {
   color: #1d4ed8;
   border-bottom: none;
   font-size: 16px;
+  padding: 16px 10px;
+}
+
+.booking-table tfoot tr:last-child td {
+  padding: 12px 10px;
+  text-align: left;
 }
 
 @media (max-width: 700px) {
@@ -1885,6 +1897,4 @@ aside::-webkit-scrollbar {
     padding: 8px 4px;
     font-size: 13px;
   }
-}.booking-table td {
-  white-space: nowrap;
 }

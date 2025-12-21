@@ -22,6 +22,11 @@ const Comment = sequelize.define('Comment', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  IsApproved: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: true,
+  },
   createdAt: { // map với createAt trong DB
     type: DataTypes.DATE,
     field: 'createAt'

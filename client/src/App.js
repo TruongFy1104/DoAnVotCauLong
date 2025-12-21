@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import UserLayout from "./Layout/UserLayout";
 import Login from "./Pages/Login/Login";
 import Register from "./Pages/Login/Register";
+import ForgotPassword from "./Pages/Login/ForgotPassword";
 import AdminLayout from "./Layout/AdminLayout";
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
       {/* Login */}
        <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       {/* User Layout */}
       <Route path="/*" element={<UserLayout />} />
       {/* Admin Layout */}

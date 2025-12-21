@@ -5,7 +5,7 @@ const { formatDate } = require('../Common');
 const OrderDetails = () => {
     const token = localStorage.getItem("token");
     if (!token) {
-        window.location.href = '/auth/login';
+        window.location.href = '/Login';
         throw new Error("Token không tồn tại. Hãy đăng nhập lại.");
     }
 
@@ -15,31 +15,6 @@ const OrderDetails = () => {
     const [order, setOrder] = useState(null);
     const [customerOrder, setCustomerOrder] = useState(null);
     const [loading, setLoading] = useState(true);
-    const handleChangeStatusOrder =async(str,status) => {
-        if (window.confirm(`Bạn có chắc chắn muốn ${str} đơn hàng không?`)) {
-            try {
-                const response = await fetch(`http://localhost:3000/privatesite/orders/changestatus/${id}`, {
-                    method: "PUT",
-                    headers: {
-                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ status }),
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setOrder(data.order)
-                    alert("Thay đổi trạng thái thành công!");
-                } else {
-                    alert("Có lỗi xảy ra, vui lòng thử lại.");
-                }
-                console.log(response);
-            } catch (err) {
-                console.error(err);
-                alert("Đã xảy ra lỗi khi thay đổi trạng thái đơn hàng.");
-            }
-        }
-    }
 
     useEffect(() => {
         const fetchOrderDetail = async () => {
@@ -132,26 +107,10 @@ const OrderDetails = () => {
                                          </div>
                                      </div>
                                 </div>
-                                <div className="">
-                                    <h5>Lệnh:</h5>
-                                    <div className="form-group">
+                                <div className="mt-4">
                                     <button className="btn btn-secondary" onClick={() => window.history.back()}>
-                                        Quay về
+                                        ← Quay về danh sách
                                     </button>
-                                    {(() => {
-                                        if (order.OrderStatusId === 3) {
-                                            return <>
-                                                <button className="btn btn-danger" onClick={() => handleChangeStatusOrder('hủy đơn',4)}>Hủy đơn</button> 
-                                                <button className="btn btn-primary" onClick={() => handleChangeStatusOrder('xác nhận',3)}>Xác nhận đơn hàng</button>
-                                            </>;
-                                        } else if(order.OrderStatusId === 5) {
-                                            return <>
-                                                <button className="btn btn-danger" onClick={() => handleChangeStatusOrder('hủy đơn',4)}>Hủy đơn</button> 
-                                                <button className="btn btn-success" onClick={() => handleChangeStatusOrder('thành công',5)}>Thành công</button> 
-                                            </>;
-                                        }
-                                        })()}
-                                    </div>
                                 </div>
                             </div>
                         </div>

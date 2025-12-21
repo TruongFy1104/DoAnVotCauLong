@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Dashboard from "../Pages/Admin/Dashboard";
+import DashboardStaff from "../Pages/Admin/DashboardStaff";
 import ItemProduct from "../Pages/Admin/ProductList";
 import AddProductForm from "../Pages/Admin/AddItem";
 import EditProductForm from "../Pages/Admin/EditProduct";
@@ -26,6 +27,9 @@ import "../Pages/Admin/admincss/Style.css";
 import OrderDetails from "../Pages/Admin/OrderDetail";
 import RevenuePages from "../Pages/Admin/Revenue";
 import CommentManagement from "../Pages/Admin/CommentManagement";
+import Post from "../Pages/Admin/PostManagement";
+import Message from "../Pages/Admin/Message";
+import StaffChat from "../Pages/Admin/StaffChat";
 const { decodeJWT } = require("../../src/Pages/Common");
 
 function handleLogout() {
@@ -36,22 +40,24 @@ function handleLogout() {
 
 const AdminLayout = () => {
   const navigate = useNavigate();
+  const [idGroup, setIdGroup] = useState(null);
 
   useEffect(() => {
     // Kiểm tra quyền truy cập của người dùng
-    // Nếu không có token hoặc không phải là admin, chuyển hướng đến trang notfound
     const token = localStorage.getItem("token");
-    let idGroup = null;
+    let group = null;
     if (token) {
       try {
         const decodedToken = decodeJWT(token);
-        idGroup = decodedToken.idgroup;
+        group = decodedToken.idgroup;
       } catch (e) {
-        idGroup = null;
+        group = null;
       }
     }
-    //trang notfound
-    if (!token || idGroup !== 1) {
+    setIdGroup(group);
+
+    
+    if (!token || (group !== 1 && group !== 3)) {
       navigate("/notfound");
     }
   }, [navigate]);
@@ -67,129 +73,187 @@ const AdminLayout = () => {
                   <i className="ti ti-dots nav-small-cap-icon fs-4"></i>
                   <span className="hide-menu">Trang chủ</span>
                 </li>
-                <li className="sidebar-item">
-                  <Link className="sidebar-link" to="/privatesite/dashboard">
-                    <span>
-                      <i className="ti ti-layout-dashboard"></i>
-                    </span>
-                    <span className="hide-menu">Dashboard</span>
-                  </Link>
-                </li>
-                <li className="nav-small-cap">
-                  <i className="ti ti-dots nav-small-cap-icon fs-4"></i>
-                  <span className="hide-menu">Sản phẩm</span>
-                </li>
-                <li className="sidebar-item">
-                  <Link className="sidebar-link" to="/privatesite/AddProduct">
-                    <span>
-                      <i className="ti ti-settings"></i>
-                    </span>
-                    <span className="hide-menu">Thêm sản phẩm</span>
-                  </Link>
-                </li>
-                <li className="sidebar-item">
-                  <Link className="sidebar-link" to="/privatesite/ProductList">
-                    <span>
-                      <i className="ti ti-settings"></i>
-                    </span>
-                    <span className="hide-menu">Danh sách sản phẩm</span>
-                  </Link>
-                </li>
-                <li className="sidebar-item">
-                  <Link className="sidebar-link" to="/privatesite/brand">
-                    <span>
-                      <i className="ti ti-settings"></i>
-                    </span>
-                    <span className="hide-menu">Thương hiệu</span>
-                  </Link>
-                </li>
-                <li className="sidebar-item">
-                  <Link className="sidebar-link" to="/privatesite/categories">
-                    <span>
-                      <i className="ti ti-settings"></i>
-                    </span>
-                    <span className="hide-menu">Thể loại</span>
-                  </Link>
-                </li>
-                <li className="nav-small-cap">
-                  <i className="ti ti-dots nav-small-cap-icon fs-4"></i>
-                  <span className="hide-menu">Đơn hàng</span>
-                </li>
-                <li className="sidebar-item">
-                  <Link className="sidebar-link" to="/privatesite/order">
-                    <span>
-                      <i className="ti ti-settings"></i>
-                    </span>
-                    <span className="hide-menu">Danh sách đơn hàng</span>
-                  </Link>
-                </li>
+                {idGroup !== 3 && (
+                  <li className="sidebar-item">
+                    <Link className="sidebar-link" to="/privatesite/dashboard">
+                      <span>
+                        <i className="ti ti-layout-dashboard"></i>
+                      </span>
+                      <span className="hide-menu">Dashboard</span>
+                    </Link>
+                  </li>
+                )}
+                {idGroup === 3 && (
+                  <li className="sidebar-item">
+                    <Link className="sidebar-link" to="/privatesite/dashboard-staff">
+                      <span>
+                        <i className="ti ti-layout-dashboard"></i>
+                      </span>
+                      <span className="hide-menu">DashboardStaff</span>
+                    </Link>
+                  </li>
+                )}
+                {idGroup !== 3 && (
+                  <>
+                    <li className="nav-small-cap">
+                      <i className="ti ti-dots nav-small-cap-icon fs-4"></i>
+                      <span className="hide-menu">Sản phẩm</span>
+                    </li>
+                    <li className="sidebar-item">
+                      <Link className="sidebar-link" to="/privatesite/AddProduct">
+                        <span>
+                          <i className="ti ti-settings"></i>
+                        </span>
+                        <span className="hide-menu">Thêm sản phẩm</span>
+                      </Link>
+                    </li>
+                    <li className="sidebar-item">
+                      <Link className="sidebar-link" to="/privatesite/ProductList">
+                        <span>
+                          <i className="ti ti-settings"></i>
+                        </span>
+                        <span className="hide-menu">Danh sách sản phẩm</span>
+                      </Link>
+                    </li>
+                    <li className="sidebar-item">
+                      <Link className="sidebar-link" to="/privatesite/brand">
+                        <span>
+                          <i className="ti ti-settings"></i>
+                        </span>
+                        <span className="hide-menu">Thương hiệu</span>
+                      </Link>
+                    </li>
+                    <li className="sidebar-item">
+                      <Link className="sidebar-link" to="/privatesite/categories">
+                        <span>
+                          <i className="ti ti-settings"></i>
+                        </span>
+                        <span className="hide-menu">Thể loại</span>
+                      </Link>
+                    </li>
+                  </>
+                )}
+                {idGroup !== 1 && (
+                  <>
+                    <li className="nav-small-cap">
+                      <i className="ti ti-dots nav-small-cap-icon fs-4"></i>
+                      <span className="hide-menu">Đơn hàng</span>
+                    </li>
+                    <li className="sidebar-item">
+                      <Link className="sidebar-link" to="/privatesite/order">
+                        <span>
+                          <i className="ti ti-settings"></i>
+                        </span>
+                        <span className="hide-menu">Danh sách đơn hàng</span>
+                      </Link>
+                    </li>
+                  </>
+                )}
                 <li className="nav-small-cap">
                   <i className="ti ti-dots nav-small-cap-icon fs-4"></i>
                   <span className="hide-menu">Quản lý</span>
                 </li>
-                <li className="sidebar-item">
-                  <Link
-                    className="sidebar-link"
-                    to="/privatesite/AccountManagement"
-                  >
-                    <span>
-                      <i className="ti ti-settings"></i>
-                    </span>
-                    <span className="hide-menu">Tài khoản</span>
-                  </Link>
-                </li>
-                <li className="sidebar-item">
-                  <Link className="sidebar-link" to="/privatesite/Revenue">
-                    <span>
-                      <i className="ti ti-settings"></i>
-                    </span>
-                    <span className="hide-menu">Doanh thu</span>
-                  </Link>
-                </li>
-                <li className="sidebar-item">
-                  <Link className="sidebar-link" to="/privatesite/comment">
-                    <span>
-                      <i className="ti ti-settings"></i>
-                    </span>
-                    <span className="hide-menu">Bình luận</span>
-                  </Link>
-                </li>
-                <li className="nav-small-cap">
-                  <i className="ti ti-dots nav-small-cap-icon fs-4"></i>
-                  <span className="hide-menu">Quản lý sân cầu</span>
-                </li>
-                <li className="sidebar-item">
-                  <Link className="sidebar-link" to="/privatesite/branch">
-                    <span>
-                      <i className="ti ti-settings"></i>
-                    </span>
-                    <span className="hide-menu">Chi nhánh</span>
-                  </Link>
-                </li>
-                <li className="sidebar-item">
-                  <Link className="sidebar-link" to="/privatesite/slot-times">
-                    <span>
-                      <i className="ti ti-settings"></i>
-                    </span>
-                    <span className="hide-menu">Khung giờ</span>
-                  </Link>
-                </li>
-                <li className="sidebar-item">
-                  <Link className="sidebar-link" to="/privatesite/courts">
-                    <span>
-                      <i className="ti ti-settings"></i>
-                    </span>
-                    <span className="hide-menu">Sân</span>
-                  </Link>
-                </li>
-                <li className="sidebar-item">
-                  <Link className="sidebar-link" to="/privatesite/booking">
-                    <span>
-                      <i className="ti ti-settings"></i>
-                    </span>
-                    <span className="hide-menu">Đơn đặt sân</span>
-                  </Link>
-                </li>
+                {idGroup !== 3 && (
+                  <>
+                    <li className="sidebar-item">
+                      <Link
+                        className="sidebar-link"
+                        to="/privatesite/AccountManagement"
+                      >
+                        <span>
+                          <i className="ti ti-settings"></i>
+                        </span>
+                        <span className="hide-menu">Tài khoản</span>
+                      </Link>
+                    </li>
+                    <li className="sidebar-item">
+                      <Link className="sidebar-link" to="/privatesite/Revenue">
+                        <span>
+                          <i className="ti ti-settings"></i>
+                        </span>
+                        <span className="hide-menu">Doanh thu</span>
+                      </Link>
+                    </li>
+                  </>
+                )}
+                {idGroup !== 1 && (
+                  <li className="sidebar-item">
+                    <Link className="sidebar-link" to="/privatesite/comment">
+                      <span>
+                        <i className="ti ti-settings"></i>
+                      </span>
+                      <span className="hide-menu">Bình luận</span>
+                    </Link>
+                  </li>
+                )}
+                {idGroup !== 1 && (
+                  <>
+                    <li className="nav-small-cap">
+                      <i className="ti ti-dots nav-small-cap-icon fs-4"></i>
+                      <span className="hide-menu">Quản lý sân cầu</span>
+                    </li>
+                    <li className="sidebar-item">
+                      <Link className="sidebar-link" to="/privatesite/booking">
+                        <span>
+                          <i className="ti ti-settings"></i>
+                        </span>
+                        <span className="hide-menu">Đơn đặt sân</span>
+                      </Link>
+                    </li>
+                  </>
+                )}
+                {idGroup !== 3 && (
+                  <>
+                    <li className="sidebar-item">
+                      <Link className="sidebar-link" to="/privatesite/branch">
+                        <span>
+                          <i className="ti ti-settings"></i>
+                        </span>
+                        <span className="hide-menu">Chi nhánh</span>
+                      </Link>
+                    </li>
+                    <li className="sidebar-item">
+                      <Link className="sidebar-link" to="/privatesite/slot-times">
+                        <span>
+                          <i className="ti ti-settings"></i>
+                        </span>
+                        <span className="hide-menu">Khung giờ</span>
+                      </Link>
+                    </li>
+                    <li className="sidebar-item">
+                      <Link className="sidebar-link" to="/privatesite/courts">
+                        <span>
+                          <i className="ti ti-settings"></i>
+                        </span>
+                        <span className="hide-menu">Sân</span>
+                      </Link>
+                    </li>
+                  </>
+                )}
+                {idGroup !== 1 && (
+                  <>
+                    <li className="nav-small-cap">
+                      <i className="ti ti-dots nav-small-cap-icon fs-4"></i>
+                      <span className="hide-menu">Quản lý bài đăng</span>
+                    </li>
+                    <li className="sidebar-item">
+                      <Link className="sidebar-link" to="/privatesite/post">
+                        <span>
+                          <i className="ti ti-settings"></i>
+                        </span>
+                        <span className="hide-menu">Bài đăng</span>
+                      </Link>
+                    </li>
+                    <li className="sidebar-item">
+                      <Link className="sidebar-link" to="/privatesite/staff-chat">
+                        <span>
+                          <i className="ti ti-message-circle"></i>
+                        </span>
+                        <span className="hide-menu">Chat với khách hàng</span>
+                      </Link>
+                    </li>
+                  </>
+                )}
               </ul>
             </nav>
           </div>
@@ -296,6 +360,7 @@ const AdminLayout = () => {
         <Header />
         <Routes>
           <Route path="Dashboard" element={<Dashboard />} />
+          <Route path="Dashboard-staff" element={<DashboardStaff />} />
           <Route path="ProductList" element={<ItemProduct />} />
           <Route path="AddProduct" element={<AddProductForm />} />
           <Route path="addproduct/:id" element={<AddProductForm />} />
@@ -313,6 +378,9 @@ const AdminLayout = () => {
           <Route path="AccountManagement/:id" element={<DetailAccount />} />
           <Route path="revenue" element={<RevenuePages />} />
           <Route path="comment" element={<CommentManagement />} />
+          <Route path="post" element={<Post />} />
+          <Route path="message" element={<Message />} />
+          <Route path="staff-chat" element={<StaffChat />} />
         </Routes>
       </div>
     </div>

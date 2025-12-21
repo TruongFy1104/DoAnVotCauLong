@@ -258,3 +258,41 @@ exports.deleteAccount = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
+
+// Khóa/Mở khóa tài khoản
+exports.toggleBanAccount = async (req, res) => {
+    try {
+        const user = req.user;
+        // Chỉ admin mới được khóa tài khoản
+        if (!user || user.idgroup !== 1) {
+            return res.status(403).json({ message: "Chỉ quản trị viên mới được khóa/mở khóa tài khoản." });
+        }
+        
+        const { id } = req.params;
+        const account = await Account.findOne({
+            where: { AccountId: id },
+        });
+        
+        if (!account) {
+            return res.status(404).json({ message: "Tài khoản không tìm thấy." });
+        }
+
+        // Không cho phép khóa tài khoản admin
+        if (account.IdGroup === 1) {
+            return res.status(403).json({ message: "Không thể khóa tài khoản quản trị viên." });
+        }
+
+        // Đảo trạng thái khóa
+        account.IsBanned = account.IsBanned === 1 ? 0 : 1;
+        await account.save();
+        
+        const status = account.IsBanned === 1 ? 'khóa' : 'mở khóa';
+        return res.json({ 
+            message: `Đã ${status} tài khoản ${account.Username} thành công!`,
+            account 
+        });
+    } catch (error) {
+        console.error("Lỗi khi khóa/mở khóa tài khoản:", error);
+        return res.status(500).json({ error: error.message });
+    }
+};

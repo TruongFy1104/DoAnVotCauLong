@@ -9,6 +9,9 @@ const PaymentSuccess = () => {
     const params = new URLSearchParams(location.search);
     const orderIdParam = params.get("orderId");
     setOrderId(orderIdParam);
+
+    // XÓA GIỎ HÀNG KHI THANH TOÁN THÀNH CÔNG
+    localStorage.removeItem("cart");
   }, [location]);
 
   return (

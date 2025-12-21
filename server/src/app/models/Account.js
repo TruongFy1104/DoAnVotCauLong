@@ -2,6 +2,8 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/db');
 const GroupAccount = require('./GroupAccount');
 const Customer = require('./Customer');
+const Post = require("./Post"); 
+const CommentReply = require("./CommentReply"); // Thêm dòng này
 
 const Account = sequelize.define('Account', {
     AccountId: {
@@ -49,6 +51,12 @@ const Account = sequelize.define('Account', {
         type: DataTypes.STRING(100),
         allowNull: true,
     },
+    IsBanned: {
+        type: DataTypes.TINYINT,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '0: Không bị khóa, 1: Bị khóa'
+    },
 }, {
     tableName: 'account',
     timestamps: false,
@@ -60,5 +68,11 @@ GroupAccount.hasMany(Account, { foreignKey: 'IdGroup' });
 
 Account.belongsTo(Customer, { foreignKey: 'CustomerId' });
 Customer.hasMany(Account, { foreignKey: 'CustomerId' });
+
+Account.hasMany(Post, { foreignKey: "AccountId", as: "Posts" });
+Post.belongsTo(Account, { foreignKey: "AccountId", as: "Account" });
+
+Account.hasMany(CommentReply, { foreignKey: "AccountId" });
+CommentReply.belongsTo(Account, { foreignKey: "AccountId" });
 
 module.exports = Account;
